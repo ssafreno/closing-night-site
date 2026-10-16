@@ -467,7 +467,15 @@ export default class FinaleRoom extends Room {
         await this.wait(1.6); this._guard(run);
         this._dir('finale.trigger.climb', 2.4);
         ctx.camera.lookAtPoint(LOOK_LAMPROOM); // tilt up with her: the lamp room clears the surtitles
-        await lav?.moveTo?.(h.perches.laviniaLantern.position, { duration: 2.8, rotationY: h.perches.laviniaLantern.rotationY });
+        // POLISH: one straight move took her up through the solid tower. She now rises beside it (out past the
+        // gallery, on her own side) and drifts in over the rail to the lantern; same 2.8 s in all.
+        const lan = h.perches.laviniaLantern, c = lan.position;
+        if (lav?.group) {
+          const p = lav.group.position, dx = p.x - c[0], dz = p.z - c[2], d = Math.hypot(dx, dz) || 1;
+          await lav.moveTo([c[0] + (dx / d) * 1.35, c[1] + 0.12, c[2] + (dz / d) * 1.35], { duration: 1.7, rotationY: lan.rotationY });
+          this._guard(run);
+        }
+        await lav?.moveTo?.(c, { duration: 1.1, rotationY: lan.rotationY });
         this._guard(run);
         break;
       }

@@ -27,9 +27,14 @@ export function garmentGeometry(type = 'gown', seed = 1) {
     for (const s of [-1, 1]) parts.push(loftG([S(-0.12, r * 1.05 * puff, r * puff, 0, 0, s * 0.19), S(-0.12 - len * 0.45, r * puff, r * 0.95 * puff, 0.004, 0.01, s * 0.205), S(-0.12 - len, r * 1.1, r, 0.008, 0.02, s * 0.215)], { seg: 10, seed: seed + s, capBottom: true }));
   };
   let body;
+  // POLISH: coats and jackets get a waist, a turned-down collar and lapels (they hung as plain slabs in the rack close-up)
+  const tailored = (front) => {
+    parts.push(loftG([S(-0.072, 0.075, 0.05), S(-0.11, 0.17, 0.085, 0.002), S(-0.15, 0.2, 0.098, 0.002)], { seg: 20, seed: seed + 7, arc: [0.55, TAU - 0.55] }));
+    for (const s of [-1, 1]) parts.push(boxG(0.055, 0.24, 0.006, 0, 0, 0, 0.002).rotateZ(s * 0.22).rotateY(s * 0.28).translate(s * 0.062, -0.26, front));
+  };
   if (type === 'gown') body = [S(-0.075, 0.055, 0.035), S(-0.12, 0.18, 0.07), S(-0.16, 0.19, 0.09), S(-0.3, 0.165, 0.1), S(-0.45, 0.125, 0.085), S(-0.55, 0.17, 0.11, 0.008), S(-0.85, 0.26, 0.17, 0.03), S(-1.2, 0.34, 0.23, 0.045), S(-1.48, 0.4, 0.27, 0.055)];
-  else if (type === 'coat') { body = [S(-0.07, 0.065, 0.04), S(-0.12, 0.2, 0.07), S(-0.17, 0.21, 0.1), S(-0.4, 0.195, 0.11, 0.006), S(-0.7, 0.2, 0.11, 0.012), S(-1.15, 0.24, 0.13, 0.025)]; sleeves(0.6); }
-  else if (type === 'jacket') { body = [S(-0.07, 0.065, 0.04), S(-0.12, 0.2, 0.07), S(-0.17, 0.21, 0.1), S(-0.42, 0.19, 0.105, 0.005), S(-0.72, 0.2, 0.11, 0.01)]; sleeves(0.58); }
+  else if (type === 'coat') { body = [S(-0.07, 0.065, 0.04), S(-0.12, 0.2, 0.07), S(-0.17, 0.21, 0.1), S(-0.4, 0.195, 0.11, 0.006), S(-0.56, 0.185, 0.106, 0.008), S(-0.7, 0.2, 0.11, 0.014), S(-1.15, 0.25, 0.13, 0.035)]; sleeves(0.6); tailored(0.1); }
+  else if (type === 'jacket') { body = [S(-0.07, 0.065, 0.04), S(-0.12, 0.2, 0.07), S(-0.17, 0.21, 0.1), S(-0.42, 0.18, 0.1, 0.005), S(-0.56, 0.192, 0.106, 0.008), S(-0.72, 0.205, 0.112, 0.014)]; sleeves(0.58); tailored(0.096); }
   else if (type === 'cape') body = [S(-0.06, 0.06, 0.04), S(-0.1, 0.16, 0.1), S(-0.2, 0.27, 0.18, 0.01), S(-0.6, 0.32, 0.22, 0.03), S(-1.2, 0.39, 0.26, 0.05)];
   else { body = [S(-0.07, 0.06, 0.035), S(-0.12, 0.19, 0.07), S(-0.17, 0.2, 0.09), S(-0.35, 0.17, 0.1, 0.008), S(-0.6, 0.18, 0.1, 0.012)]; sleeves(0.52, 0.055, 1.25); }
   parts.unshift(loftG(body, { seg: 28, seed, capTop: true }));
@@ -41,7 +46,7 @@ export function garmentGeometry(type = 'gown', seed = 1) {
 const garmentMats = new Map();
 /** Garment cloth material: white woven texture (tint by instance colour), or a solid colour when color is given. */
 export function garmentMaterial(color = '#ffffff') {
-  if (!garmentMats.has(color)) garmentMats.set(color, new THREE.MeshStandardMaterial({ color, map: clothTexture({ tint: '#f4f0e8', seed: 72, weave: 2, stains: 1 }), roughness: 0.9, side: THREE.DoubleSide }));
+  if (!garmentMats.has(color)) { const map = clothTexture({ tint: '#f4f0e8', seed: 72, weave: 2, stains: 1 }); garmentMats.set(color, new THREE.MeshStandardMaterial({ color, map, bumpMap: map, bumpScale: 1.5, roughness: 0.9, side: THREE.DoubleSide })); } // POLISH: bumpMap (the weave in relief; garments read as cloth, not flat colour)
   return garmentMats.get(color);
 }
 let hookGeo = null;
@@ -650,12 +655,29 @@ export function coat({ color = '#5a3e26', cap = true, capColor = '#4a4238', hook
   const g = grp('coat');
   const S = (y, rx, rz, f = 0, z = 0, x = 0) => ({ y, rx, rz, f, z, x });
   const zc = 0.14;
-  const parts = [loftG([S(-0.03, 0.03, 0.025, 0, 0.05), S(-0.09, 0.1, 0.07, 0, zc - 0.03), S(-0.2, 0.17, 0.1, 0.004, zc), S(-0.34, 0.2, 0.11, 0.008, zc), S(-0.7, 0.21, 0.12, 0.018, zc), S(-1.15, 0.24, 0.13, 0.03, zc)], { seg: 32, seed, capTop: true })];
-  for (const s of [-1, 1]) parts.push(loftG([S(-0.2, 0.055, 0.055, 0, zc + 0.01, s * 0.17), S(-0.5, 0.05, 0.05, 0.004, zc + 0.03, s * 0.2), S(-0.82, 0.058, 0.055, 0.006, zc + 0.04, s * 0.21)], { seg: 10, seed: seed + s, capBottom: true }));
+  // POLISH: was a six-section capsule with straight sleeves and two flaps (a flat slab from the door vantage). Now
+  // shoulders, a belted waist, a flared hem with deeper folds, a turned-down collar, lapels, a belt, buttons and a dark
+  // front edge; the pocket stays where it was (userData.pocket). 4–5 draw calls.
+  const body = loftG([S(-0.03, 0.03, 0.025, 0, 0.05), S(-0.08, 0.11, 0.07, 0, zc - 0.035), S(-0.15, 0.19, 0.1, 0.002, zc - 0.005), S(-0.24, 0.212, 0.114, 0.004, zc),
+    S(-0.42, 0.2, 0.114, 0.007, zc), S(-0.58, 0.188, 0.11, 0.008, zc), S(-0.66, 0.198, 0.114, 0.014, zc), S(-0.9, 0.236, 0.126, 0.032, zc), S(-1.15, 0.272, 0.138, 0.05, zc)], { seg: 40, seed, capTop: true });
+  const parts = [body];
+  // collar: the back and sides of a turned-down collar lying over the shoulders (open at the front)
+  parts.push(loftG([S(-0.045, 0.12, 0.08, 0, zc - 0.03), S(-0.1, 0.17, 0.1, 0.002, zc - 0.012), S(-0.15, 0.205, 0.112, 0.003, zc - 0.002)], { seg: 24, seed: seed + 7, arc: [0.55, TAU - 0.55] }));
+  // lapels: two long facings meeting in a V at the top button
+  for (const s of [-1, 1]) parts.push(boxG(0.062, 0.27, 0.007, 0, 0, 0, 0.003).rotateZ(s * 0.22).rotateY(s * 0.26).translate(s * 0.07, -0.28, zc + 0.106));
+  // belt: a band at the waist, a little proud
+  parts.push(loftG([S(-0.565, 0.194, 0.117, 0, zc), S(-0.625, 0.196, 0.119, 0, zc)], { seg: 40, seed: seed + 3, folds: [] }));
+  // sleeves: set slightly forward of the side seams, a little bent, wider cuffs
+  for (const s of [-1, 1]) parts.push(loftG([S(-0.17, 0.058, 0.058, 0, zc - 0.005, s * 0.185), S(-0.42, 0.052, 0.052, 0.004, zc + 0.02, s * 0.215), S(-0.7, 0.054, 0.054, 0.006, zc + 0.045, s * 0.222), S(-0.8, 0.064, 0.062, 0.006, zc + 0.05, s * 0.222), S(-0.82, 0.064, 0.062, 0, zc + 0.05, s * 0.222)], { seg: 12, seed: seed + s, capBottom: true }));
   parts.push(boxG(0.13, 0.04, 0.03, 0.11, -0.78, zc + 0.12, 0.008).rotateY(0.25)); // pocket flap (right)
   parts.push(boxG(0.13, 0.04, 0.03, -0.11, -0.78, zc + 0.12, 0.008).rotateY(-0.25));
   const mat = garmentMaterial(color);
   const cloth = mergeInto(parts, mat); g.add(cloth);
+  // buttons and the dark front edge below the belt (one draw call)
+  const trim = [];
+  for (const y of [-0.43, -0.5, -0.72, -0.86]) trim.push(new THREE.SphereGeometry(0.011, 10, 6).scale(1, 1, 0.45).translate(0.028, y, zc + (y > -0.6 ? 0.118 : y > -0.8 ? 0.124 : 0.13)));
+  trim.push(tubeG([[0.002, -0.63, zc + 0.122], [0.002, -0.78, zc + 0.13], [0.002, -0.95, zc + 0.142], [0.002, -1.14, zc + 0.156]], 0.0035, { radial: 5, seg: 10 }));
+  g.add(mergeInto(trim, M.bakelite('#1a120c'), { cast: false }));
   if (hook) g.add(mergeInto([boxG(0.03, 0.08, 0.008, 0, 0.0, 0.004, 0.003), tubeG([[0, 0.0, 0.008], [0, 0.0, 0.05], [0, 0.03, 0.07]], 0.005, { radial: 6, seg: 8 }), tubeG([[0, 0.02, 0.008], [0, 0.05, 0.03], [0, 0.08, 0.035]], 0.004, { radial: 6, seg: 8 })], M.brass()));
   let cm = null;
   if (cap) {

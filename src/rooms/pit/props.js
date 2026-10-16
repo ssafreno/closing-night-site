@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import * as M from '../../engine/props/materials.js';
 import { TAU, mesh, noRay, grp, at, boxG, cylG, latheG, mergeG, mergeInto, tubeG, instances, chase, rng, textPlate } from '../../engine/props/theatre/common.js';
-import { dustSheet, doubleBass, bassDrum, gear, pianolaRollTexture } from '../../engine/props/theatre.js';
+import { dustSheet, doubleBass, bassDrum, gear } from '../../engine/props/theatre.js';
 import { agedPaperTexture, FONTS, grime } from '../../engine/props/theatre-textures.js';
 import { makeCanvas, canvasTexture } from '../../engine/props/textures.js';
 
@@ -67,6 +67,32 @@ export function leaderTexture(num) {
   });
   const t = canvasTexture(c);
   leaderTex.set(num, t);
+  return t;
+}
+
+// POLISH: the roll in the spool box punched with its own tune (the leader's eight guide columns, its first notes
+// stepping down the paper, phrase after phrase) instead of the shared prop's random holes.
+const spoolTex = new Map();
+export function spoolRollTexture(num) {
+  if (spoolTex.has(num)) return spoolTex.get(num);
+  const w = 256, h = 1024, c = makeCanvas(w, h), g = c.getContext('2d');
+  g.fillStyle = '#e6dcc0'; g.fillRect(0, 0, w, h);
+  grime(g, w, h, { seed: num, color: '#a08050', octaves: [[4, 0.12], [20, 0.06]] });
+  const x0 = 17, cw = (w - 34) / 8, notes = ROLLS[num]?.notes || [];
+  g.strokeStyle = 'rgba(120,80,40,0.28)'; g.lineWidth = 1; g.setLineDash([4, 7]);
+  for (let i = 0; i <= 8; i++) { g.beginPath(); g.moveTo(x0 + i * cw, 0); g.lineTo(x0 + i * cw, h); g.stroke(); }
+  g.setLineDash([]);
+  g.fillStyle = '#2a2018';
+  const step = 52, phrase = notes.length * step + 70;
+  for (let y0 = 30; y0 < h - 20; y0 += phrase) {
+    notes.forEach((n, k) => {
+      const y = y0 + k * step; if (y + 30 > h) return;
+      g.beginPath(); g.roundRect(x0 + (n + 0.5) * cw - cw * 0.26, y, cw * 0.52, 30, 5); g.fill();
+    });
+  }
+  g.fillStyle = 'rgba(90,60,30,0.5)'; g.fillRect(0, 0, 3, h); g.fillRect(w - 3, 0, 3, h);
+  const t = canvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  spoolTex.set(num, t);
   return t;
 }
 
@@ -306,7 +332,7 @@ export function fitPianola(piano) {
     loaded = num || null;
     U.roll.visible = U.rollSheet.visible = !!loaded;
     if (loaded) {
-      if (!rollTex[loaded]) { const t = pianolaRollTexture({ seed: loaded }); t.repeat.set(1, 0.6); rollTex[loaded] = t; }
+      if (!rollTex[loaded]) { const t = spoolRollTexture(loaded); t.repeat.set(1, 0.6); rollTex[loaded] = t; } // POLISH: its own tune
       U.roll.material.map = rollTex[loaded]; U.roll.material.needsUpdate = true;
     }
   };
@@ -321,9 +347,13 @@ export function fitPianola(piano) {
     for (let i = 0; i < 3; i++) {
       const c = Math.abs(cents[i]);
       if (shiver && c > 0.01) {
-        const f = 435 * (Math.pow(2, c / 1200) - 1), amp = 0.06 + 0.28 * Math.min(1, c / 40);
-        riders[i].rotation.z = amp * Math.sin(TAU * f * clock + i * 1.7);
-        riders[i].position.y = 0.0072 + 0.0012 * Math.abs(Math.sin(TAU * f * clock + i));
+        // POLISH: the true beat (10 Hz at 40 cents) aliased into a faint blur at 60 fps. Above 2 Hz the visible rate is
+        // compressed (40 cents → ~4.9 Hz, 60 → ~6.6 Hz) and the swing and hop grow, so far-off reads as a clear rattle and
+        // near reads as a slow rock; still monotonic in |c|, still dead still at 0.
+        const fTrue = 435 * (Math.pow(2, c / 1200) - 1), f = fTrue < 2 ? fTrue : 2 + (fTrue - 2) * 0.35;
+        const k = Math.min(1, c / 40), amp = 0.08 + 0.4 * k, ph = TAU * f * clock + i * 1.7;
+        riders[i].rotation.z = amp * Math.sin(ph);
+        riders[i].position.y = 0.0072 + (0.0012 + 0.0045 * k * k) * Math.abs(Math.sin(ph));
       } else { riders[i].rotation.z = chase(riders[i].rotation.z, 0, dt, 10); riders[i].position.y = 0.0072; }
       if (pluckE[i] > 0) { pluckE[i] = Math.max(0, pluckE[i] - dt * 0.5); const s = 1 + pluckE[i] * 1.6 * (0.5 + 0.5 * Math.sin(clock * 90)); strings[i].scale.set(s, s, 1); }
     }

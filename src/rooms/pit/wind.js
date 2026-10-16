@@ -4,7 +4,7 @@
 //   and the governor lever with its brass pawl, all in one frame.
 //   Crank before oiling (click or drag, either view): crankSqueal, a judder, pit.wind.seized. `oilcan` used on the crank,
 //   the drum or the dial (either view): oilSquirt, the can is consumed (item.oilcan.used), pit.oiled, an oil stain.
-//   The first crank after oiling: Pike's pit.wind.pike ("Gale. Then the governor.").
+//   The first crank after oiling: Pike's pit.wind.pike ("Gale. Then the governor.") as the first drag ends (POLISH).
 //   Crank (oiled): press on it and drag round in circles. The pointer's angle round the crank hub (projected to the
 //   screen) turns the crank and the drum; every full turn adds PUSH of speed (about one band per one and a half turns),
 //   and the drum always coasts down by DECAY per second (about one band every 4 s). The needle chases the speed; the
@@ -74,8 +74,9 @@ export default function wind(ctx, room, h) {
     if (solved() || latching) return;
     if (!oiled()) { seized(); return; }
     if (spinDown) return;
-    firstTurn();
-    crank = { last: screenAngle(info) };
+    // POLISH: Pike's first-crank line waits for the end of the first drag (crankEnd): said on the press, it opened
+    // mid-drag over a turning crank and the player's next press only closed it
+    crank = { last: screenAngle(info), from: crankAng };
   };
   const crankMove = (info) => {
     if (!crank || spinDown || solved()) return;
@@ -95,7 +96,12 @@ export default function wind(ctx, room, h) {
     }
     W.setCrankAngle(-crankAng);
   };
-  const crankEnd = () => { if (crank) { crank = null; W.setCrankAngle(null); } };
+  const crankEnd = () => {
+    if (!crank) return;
+    const turned = Math.abs(crankAng - crank.from) > 0.5; // POLISH: a real turn, not a click
+    crank = null; W.setCrankAngle(null);
+    if (turned && !spinDown && !latching && !solved()) firstTurn(); // POLISH
+  };
 
   const crankClick = () => {
     if (solved()) return;

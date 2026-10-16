@@ -48,6 +48,13 @@ export default function gramophone(ctx, room, h) {
     useItem: useWinder,
     onClick: () => { if (!wound()) unwound(); },
   });
+  // POLISH: the needle tin on the deck (it used to read as the crank socket) says what it is
+  const tinHit = G.object.userData.needleTinHit;
+  if (tinHit) hotspots.add({
+    id: 'dressing.gramophone.tin', object: tinHit, label: 'Needle tin', highlight: keep(G.object.userData.needleTin), scope: SCOPE,
+    useItem: useWinder,
+    onClick: () => dialogue.caption('dressing.gramophone.tin', { scope: SCOPE }),
+  });
   hotspots.add({
     id: 'dressing.gramophone.platter', object: G.platter.hit, label: 'Record', highlight: keep(G.spin), scope: SCOPE,
     useItem: useWinder,

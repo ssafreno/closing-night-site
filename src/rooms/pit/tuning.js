@@ -1,7 +1,8 @@
 // tuning (PITCH): Pozzi's A (docs/rooms/pit.md).
 //   Pianola (room) → room._openTuning(): the lid lifts, the fork and hammer come out into the bay, Lavinia drifts off
 //   the lid, the close-up focus:pit.tuning opens and the three paper riders shiver (always, while it is open: the rate
-//   is the string's beat against A435, about 1.3 Hz at 5 cents and a blur at 40). The first time: pit.tuning.riders.
+//   follows the string's beat against A435: about 1.3 Hz at 5 cents, a hard rattle at 40; POLISH: the seen rate is eased
+//   above 2 Hz so it never aliases into a blur, props.js fitPianola). The first time: pit.tuning.riders.
 //   Pins (click, or press-and-drag): the hammer moves onto that pin. Hammer (or a pin): drag up or down; every 30 px of
 //   vertical travel is one 5-cent detent (pinTurn): up = sharper (+5), down = flatter (−5). Each detent is saved
 //   (pit.cents). Fork: hums A435 for 6 s (tuningFork). String or rider: plucks it against the fork (pianoString {cents}).

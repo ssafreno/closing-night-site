@@ -9,7 +9,7 @@ import { kit } from '../engine/icons.js';
 
 export const complete = true;
 
-// three small hand-drawn icons the kit has no shape for
+// small hand-drawn icons the kit has no shape for
 const INK = '#2b1a10';
 const draw = (fn) => (c, size) => {
   c.save(); c.scale(size / 100, size / 100); c.lineJoin = 'round'; c.lineCap = 'round'; c.strokeStyle = INK; c.lineWidth = 3.4;
@@ -34,6 +34,28 @@ const trumpetIcon = draw((c) => {
   c.quadraticCurveTo(40, 52, 18, 54); c.closePath(); fs(c, '#c9a24a');
   c.beginPath(); c.ellipse(84, 44, 6, 26, 0, 0, Math.PI * 2); fs(c, '#7a5a1a');
   c.beginPath(); c.arc(18, 50, 4, 0, Math.PI * 2); fs(c, '#c9a24a');
+});
+
+// POLISH: the three garments had one shared folded-cloth icon in three colours; each now has its own silhouette.
+const bodiceIcon = draw((c) => { // a fitted bodice with cap sleeves and lilac lacing
+  c.beginPath(); c.moveTo(34, 20); c.quadraticCurveTo(50, 28, 66, 20); c.lineTo(80, 30); c.lineTo(72, 42); c.lineTo(66, 38);
+  c.quadraticCurveTo(62, 60, 68, 82); c.quadraticCurveTo(50, 88, 32, 82); c.quadraticCurveTo(38, 60, 34, 38); c.lineTo(28, 42); c.lineTo(20, 30); c.closePath(); fs(c, '#9a9aa2');
+  c.strokeStyle = '#b49ad0'; c.lineWidth = 2.6;
+  for (let y = 36; y < 80; y += 9) { c.beginPath(); c.moveTo(45, y); c.lineTo(55, y + 6); c.moveTo(55, y); c.lineTo(45, y + 6); c.stroke(); }
+  c.strokeStyle = 'rgba(255,255,255,0.35)'; c.lineWidth = 2; c.beginPath(); c.moveTo(38, 44); c.quadraticCurveTo(36, 62, 38, 78); c.stroke();
+});
+const capeIcon = draw((c) => { // a hooded oilskin cape, flaring wide
+  c.beginPath(); c.moveTo(50, 16); c.quadraticCurveTo(66, 16, 64, 34); c.quadraticCurveTo(80, 50, 88, 84); c.quadraticCurveTo(50, 92, 12, 84);
+  c.quadraticCurveTo(20, 50, 36, 34); c.quadraticCurveTo(34, 16, 50, 16); c.closePath(); fs(c, '#3f7a6a');
+  c.beginPath(); c.moveTo(42, 34); c.quadraticCurveTo(42, 22, 50, 22); c.quadraticCurveTo(58, 22, 58, 34); c.quadraticCurveTo(50, 38, 42, 34); c.closePath(); fs(c, '#21403a');
+  c.strokeStyle = 'rgba(0,0,0,0.3)'; c.lineWidth = 2; c.beginPath(); c.moveTo(50, 38); c.lineTo(50, 88); c.moveTo(40, 44); c.quadraticCurveTo(30, 66, 28, 86); c.moveTo(60, 44); c.quadraticCurveTo(70, 66, 72, 86); c.stroke();
+  c.fillStyle = 'rgba(255,255,255,0.3)'; c.beginPath(); c.ellipse(36, 58, 3, 10, 0.4, 0, Math.PI * 2); c.fill();
+});
+const skirtIcon = draw((c) => { // a long A-line skirt with a waistband and a stitched hem
+  c.beginPath(); c.moveTo(36, 20); c.lineTo(64, 20); c.lineTo(84, 82); c.quadraticCurveTo(50, 90, 16, 82); c.closePath(); fs(c, '#5a6070');
+  c.beginPath(); c.rect(34, 14, 32, 9); fs(c, '#4a4f5c');
+  c.strokeStyle = 'rgba(0,0,0,0.28)'; c.lineWidth = 2; c.beginPath(); c.moveTo(44, 24); c.lineTo(36, 84); c.moveTo(56, 24); c.lineTo(64, 84); c.stroke();
+  c.strokeStyle = '#d8d6ce'; c.lineWidth = 2.2; c.setLineDash([4, 3]); c.beginPath(); c.moveTo(20, 76); c.quadraticCurveTo(50, 83, 80, 76); c.stroke(); c.setLineDash([]);
 });
 
 export const items = {
@@ -80,7 +102,7 @@ export const items = {
   bodice: {
     name: 'Grey silk bodice',
     examine: 'Grey silk, a lighthouse stamp, lilac thread, three notches. Molly would know it in the dark.',
-    drawIcon: kit.fabric({ color: '#9a9aa2', trim: '#b49ad0' }),
+    drawIcon: bodiceIcon, // POLISH
   },
   chalk: {
     name: "Tailor's chalk",
@@ -90,7 +112,7 @@ export const items = {
   cape: {
     name: 'Oilskin cape',
     examine: 'Sea-green oilskin, stiff as a sail. It smells of linseed and somebody else\'s weather.',
-    drawIcon: kit.fabric({ color: '#3f7a6a', trim: '#2a4a40' }),
+    drawIcon: capeIcon, // POLISH
   },
   oilcan: {
     name: 'Oil can',
@@ -100,7 +122,7 @@ export const items = {
   skirt: {
     name: 'Storm-grey skirt',
     examine: 'Storm-grey wool, the hem finally down. The machine sounded pleased about it.',
-    drawIcon: kit.fabric({ color: '#5a6070', trim: '#b49ad0' }),
+    drawIcon: skirtIcon, // POLISH
   },
   lamp: {
     name: 'Lighthouse lamp',

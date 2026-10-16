@@ -332,14 +332,21 @@ export function cuttingTable({ l = 2.0, w = 0.9, h = 0.9 } = {}) {
 export function boltG(w = 0.6, h = 0.06, d = 0.22) { return boxG(w, h, d, 0, h / 2, 0, 0.02); }
 
 /** Tailor's chalk: a flat triangle, rounded, blue-grey. Origin: centre, lying flat. */
-export function chalkStick({ color = '#8e9cb4' } = {}) {
+// POLISH: was blue-grey, 5 cm and fully rough: a dash the colour of the shadows on the table, nearly invisible from the
+// vantage. Now off-white like its inventory icon, a little larger, with a faint self-light so it reads under the lamp.
+export function chalkStick({ color = '#efe9da' } = {}) {
   const g = grp('chalk');
-  const s = new THREE.Shape(); const R = 0.026;
+  const s = new THREE.Shape(); const R = 0.034;
   for (let i = 0; i < 3; i++) { const a = i * TAU / 3 + Math.PI / 2; const x = Math.cos(a) * R, y = Math.sin(a) * R; i ? s.lineTo(x, y) : s.moveTo(x, y); }
   s.closePath();
-  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.0015, bevelSize: 0.003, bevelSegments: 2 }).rotateX(-Math.PI / 2).translate(0, 0.0015, 0);
-  const m = mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 1 }), { cast: false });
+  const geo = new THREE.ExtrudeGeometry(s, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.003, bevelSegments: 2 }).rotateX(-Math.PI / 2).translate(0, 0.002, 0); // POLISH: thicker cake
+  const m = mesh(geo, new THREE.MeshStandardMaterial({ color, roughness: 0.95, emissive: '#5a564c', emissiveIntensity: 0.55 }), { cast: false });
   g.add(m); g.userData.body = m;
+  // POLISH: a scuff of chalk dust on the table round it (helps it read as "chalk" and frames it)
+  const dc = makeCanvas(128, 128), dg = dc.getContext('2d'), rr = rng(4410);
+  for (let i = 0; i < 260; i++) { const a = rr() * TAU, d = Math.pow(rr(), 0.6) * 54; dg.fillStyle = `rgba(245,240,228,${0.05 + rr() * 0.18})`; dg.beginPath(); dg.arc(64 + Math.cos(a) * d * 1.3, 64 + Math.sin(a) * d * 0.7, 1 + rr() * 3, 0, TAU); dg.fill(); }
+  const dust = mesh(new THREE.PlaneGeometry(0.16, 0.16).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: canvasTexture(dc), transparent: true, depthWrite: false, roughness: 1 }), { cast: false, receive: true });
+  dust.position.set(0.012, 0.0004, 0.006); dust.renderOrder = 1; noRay(dust); g.add(dust);
   return g;
 }
 
@@ -674,8 +681,11 @@ export function machineSkirt({ color = '#7c8590', drop = 0.3 } = {}) {
       cg.fillStyle = 'rgba(240,240,236,0.95)'; cg.fillRect(ux(a) - 2, hy - 44, 5, 40);
       if (i === 3) cg.fillRect(ux(b) - 2, hy - 44, 5, 40);
       if (i < n) { // stitched
-        cg.strokeStyle = '#2a2e34'; cg.lineWidth = 4; cg.setLineDash([12, 5]); cg.beginPath(); cg.moveTo(xa, hy - 14); cg.lineTo(xb, hy - 14); cg.stroke(); cg.setLineDash([]);
-        cg.strokeStyle = 'rgba(200,200,190,0.18)'; cg.lineWidth = 2; cg.beginPath(); cg.moveTo(xa, hy - 16); cg.lineTo(xb, hy - 16); cg.stroke();
+        // POLISH: the stitched quarter reads at the close-up's distance: the fold is pressed down darker and the thread is
+        // a fat dark run with a lit edge (was a 4 px dash that vanished against the hem band).
+        cg.fillStyle = 'rgba(22,26,34,0.5)'; cg.fillRect(ux(a) + 3, hy - 64, ux(b) - ux(a) - 6, 74);
+        cg.strokeStyle = '#161a22'; cg.lineWidth = 14; cg.setLineDash([16, 5]); cg.beginPath(); cg.moveTo(xa, hy - 18); cg.lineTo(xb, hy - 18); cg.stroke(); cg.setLineDash([]);
+        cg.strokeStyle = 'rgba(232,232,222,0.55)'; cg.lineWidth = 4; cg.setLineDash([16, 5]); cg.beginPath(); cg.moveTo(xa, hy - 27); cg.lineTo(xb, hy - 27); cg.stroke(); cg.setLineDash([]);
       } else { // the chalk line
         cg.strokeStyle = 'rgba(236,236,230,0.9)'; cg.lineWidth = 5; cg.setLineDash([16, 10]); cg.beginPath(); cg.moveTo(xa, hy - 14); cg.lineTo(xb, hy - 14); cg.stroke(); cg.setLineDash([]);
       }

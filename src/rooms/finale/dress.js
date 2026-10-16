@@ -277,8 +277,10 @@ export function buildDawn(group) {
   const outside = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 5.5), new THREE.MeshBasicMaterial({ map: skyTex, toneMapped: true, color: new THREE.Color(0.62, 0.64, 0.68) }));
   outside.position.set(doorX + 0.2, 2.1, -D / 2 - 1.6); G.add(outside);
   // the light: cool grey coming in through the door, a dim warm bulb inside (the night's last)
-  const day = new THREE.SpotLight('#cfd8e4', 0, 9, 0.75, 0.8, 1.2);
-  day.position.set(doorX, 1.9, -D / 2 - 1.2); day.target.position.set(doorX + 0.6, 0, 0.6); G.add(day, day.target);
+  // POLISH: the spot sat 1.2 m outside at door height, so the open leaf's inner face caught a hot disc a hand's breadth
+  // across; set further out and up (a sky, not a lamp), narrower, it rakes the leaf evenly and pools on the lino.
+  const day = new THREE.SpotLight('#cfd8e4', 0, 12, 0.5, 1.0, 1.2);
+  day.position.set(doorX + 0.25, 3.4, -D / 2 - 3.0); day.target.position.set(doorX + 0.5, 0, 0.5); G.add(day, day.target);
   const fill = new THREE.HemisphereLight('#b8c4d4', '#2a2420', 0); G.add(fill);
   const bulb = new THREE.PointLight('#ffc890', 0.8, 5, 1.6); bulb.position.set(1.4, 2.8, 0.2); G.add(bulb);
   // a few things of the Green Room: the coat stand (a hat on it), a fire bucket, a bentwood chair
@@ -300,7 +302,7 @@ export function buildDawn(group) {
     setOpen(t) {
       open = t;
       door.userData.setOpen(t);
-      day.intensity = 16 * t;
+      day.intensity = 22 * t; // POLISH: 16 → 22 for the spot set further out
       fill.intensity = 0.2 + 0.55 * t;
     },
     get open() { return open; },

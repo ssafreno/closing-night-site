@@ -35,8 +35,15 @@ export default function rubbing(ctx, room, h) {
   // ---- the order pad -------------------------------------------------------------------------------------------------
   const openPad = () => {
     if (revealed()) { papers.show('orderpad'); return; }
+    // POLISH: already in the close-up, a plain click with the chalk is a dab: say the rub wants a drag (integration-qa:
+    // "using the chalk on the pad only opens the pad, and the rub needs a drag. Nothing says so")
+    if (hotspots.scope === VIEW) {
+      if (inventory.has('chalk') && dialogue.has('wardrobe.pad.dab')) dialogue.caption('wardrobe.pad.dab', { scope: VIEW });
+      return;
+    }
     room.focusOn(P.focus, VIEW, 'rubbing', { onExit: () => { rub = null; } });
     if (!inventory.has('chalk')) dialogue.caption('wardrobe.pad.blank', { scope: VIEW });
+    else if (dialogue.has('wardrobe.pad.chalk')) dialogue.caption('wardrobe.pad.chalk', { scope: VIEW }); // POLISH
   };
   room.spot('pad', P.hit, 'Order pad', P.object, {
     scope: ['room', VIEW],

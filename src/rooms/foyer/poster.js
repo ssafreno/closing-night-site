@@ -138,7 +138,7 @@ export default function poster(ctx, room, h) {
       state.solve('poster');
       await room.wait(0.35);
       audio?.play('hutchDoor', { gain: 0.35, pitch: 1.4 });
-      await tween.run(0.9, (k) => P.setDoor(0.82 * (1 - k)), { ease: 'inOutSine' });
+      await tween.run(0.9, (k) => P.setDoor(P.doorOpen * (1 - k)), { ease: 'inOutSine' }); // POLISH: was 0.82
       audio?.play('latch', { gain: 0.5, pitch: 1.3 });
       await room.wait(0.4);
       await papers.show('lastnight');
@@ -153,7 +153,7 @@ export default function poster(ctx, room, h) {
       drag = null; finishing = false;
       const set = placed();
       P.pieces.forEach((p, i) => { stop(i); p.setPlaced(set.has(i) ? 1 : 0); p.mesh.castShadow = true; });
-      P.setDoor(solved() ? 0 : 0.82);
+      P.setDoor(solved() ? 0 : P.doorOpen); // POLISH: was 0.82
     },
   };
 }

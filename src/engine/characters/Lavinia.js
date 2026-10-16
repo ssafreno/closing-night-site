@@ -998,6 +998,7 @@ export class Lavinia extends Character {
     const pSpeed = this._presenceTarget < this._presence ? 1 / 2.6 : 1 / 1.5;
     this._presence = this._presenceTarget > this._presence ? Math.min(this._presenceTarget, this._presence + dt * pSpeed) : Math.max(this._presenceTarget, this._presence - dt * pSpeed);
     const pres = smooth(this._presence);
+    const presVis = pres * this._focusAside(dt); // POLISH: steps aside in close-ups (CompanionStub); the light keeps pres
 
     // ---- drift (moveTo)
     let leanFwd = 0;
@@ -1136,12 +1137,12 @@ export class Lavinia extends Character {
     // ---- uniforms, effects, light
     this._hover = damp(this._hover, this.ctx.hotspots?.hovered?.id === this.who ? 1 : 0, 8, dt);
     U.uHover.value = this._hover;
-    U.uPresence.value = pres;
+    U.uPresence.value = presVis; // POLISH
     U.uMistY0.value = lerp(lerp(LOOK.mist[0], 0.3, hoverW), -0.5, perchW);
     U.uMistY1.value = lerp(lerp(LOOK.mist[1], 0.62, hoverW), -0.15, perchW);
     this.group.updateWorldMatrix(true, false);
     U.uCharInv.value.copy(this.group.matrixWorld).invert();
-    this._updateFx(dt, t, pres, poseY, perchW);
+    this._updateFx(dt, t, presVis, poseY, perchW, pres); // POLISH: fx fade with her, the light does not
   }
 
   _deform(D, t, perchW, compress, s) {
@@ -1205,7 +1206,7 @@ export class Lavinia extends Character {
     this.pearls.instanceMatrix.needsUpdate = true;
   }
 
-  _updateFx(dt, t, pres, poseY, perchW) {
+  _updateFx(dt, t, pres, poseY, perchW, presLight = pres) {
     // haze: breathes, follows the root
     this.haze.material.opacity = 0.17 * pres * (0.85 + 0.15 * Math.sin(t * 0.9)) * (1 + this._hover * 0.4);
     this.haze.position.y = 1.05 - perchW * 0.35;
@@ -1240,7 +1241,7 @@ export class Lavinia extends Character {
       oc[i * 3] = w; oc[i * 3 + 1] = w * 0.95; oc[i * 3 + 2] = w * 0.9;
     }
     this.motes.userData.commit();
-    if (this.light) this.light.intensity = this._lightBase * pres * (0.92 + 0.08 * Math.sin(t * 1.1)) * (1 + 0.25 * this._hover);
+    if (this.light) this.light.intensity = this._lightBase * presLight * (0.92 + 0.08 * Math.sin(t * 1.1)) * (1 + 0.25 * this._hover);
     this.light && (this.light.position.y = 1.25 - perchW * 0.3);
   }
 

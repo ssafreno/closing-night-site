@@ -200,6 +200,9 @@ export function buildSet(ctx, group) {
   ceilMat.map = ceilMat.map.clone(); ceilMat.map.wrapS = ceilMat.map.wrapT = THREE.RepeatWrapping; ceilMat.map.repeat.set(2, 2); ceilMat.map.needsUpdate = true;
   const ceil = mesh(new THREE.PlaneGeometry(ROOM.x1 - ROOM.x0, ROOM.z1 - ROOM.z0).rotateX(Math.PI / 2).translate(0, ROOM.H, 0), ceilMat, { cast: false });
   ceil.name = 'ceiling'; G.add(ceil);
+  // POLISH: the ceiling faces only the hemi's near-black ground colour and no lamp reaches it, so the top third of the
+  // first frame was a black band; a faint self-light on its own plaster map shows the stains and the pipes against it
+  ceilMat.emissiveMap = ceilMat.map; ceilMat.emissive.set('#8a6a4a'); ceilMat.emissiveIntensity = 0.16;
   const PASS_X = 0.15, STAGE_Z = 1.3, RAINWIN_Z = -2.25;
   G.add(wall({ len: 5.8, pos: [0, 0, ROOM.z0], ry: 0, holes: [[PASS_X, 0, 0.95, 2.12]], gaps: [[PASS_X - 0.6, PASS_X + 0.6, 0, 2.3]], mat: wallMat, trimMat, darkMat }));
   G.add(wall({ len: 5.8, pos: [0, 0, ROOM.z1], ry: Math.PI, mat: wallMat, trimMat, darkMat }));
@@ -499,7 +502,7 @@ export function buildSet(ctx, group) {
   });
   const lw = 0.95, lcx = lw / 2;
   const namePlate = mesh(new THREE.PlaneGeometry(0.38, 0.13), new THREE.MeshStandardMaterial({ map: plateTex([['PASS DOOR — STAGE', 44, FONTS.fell], ['KEEP SHUT', 40, FONTS.fell]], 768, 260, 3), metalness: 0.45, roughness: 0.45 }), { cast: false });
-  namePlate.position.set(lcx, 1.86, 0.029); leaf.add(namePlate);
+  namePlate.position.set(lcx, 1.705, 0.029); leaf.add(namePlate); // POLISH: between the iron straps (was 1.86, under the top strap and the HUD Back)
   const rulePlate = mesh(new THREE.PlaneGeometry(0.46, 0.131), new THREE.MeshStandardMaterial({ map: plateTex([['NOBODY PASSES TO THE STAGE', 40, FONTS.fell], ['WITHOUT SIGNING IN.', 40, FONTS.fell], ['— H. PIKE, S.M.', 30, FONTS.fell]], 840, 240, 4), metalness: 0.45, roughness: 0.45 }), { cast: false });
   rulePlate.position.set(lcx, 1.52, 0.029); leaf.add(rulePlate);
   // the lock: an escutcheon under the knob, and the PASS DOOR key that sits in it once used

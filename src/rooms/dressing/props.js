@@ -260,10 +260,13 @@ export function reflectionTex() {
   g.fillStyle = sh; g.beginPath(); g.moveTo(1122, 56); g.quadraticCurveTo(1150, 132, 1178, 56); g.quadraticCurveTo(1150, 70, 1122, 56); g.fill();
   g.fillStyle = '#9a7a34'; g.fillRect(1236, 34, 196, 286);
   g.fillStyle = '#e4d4ae'; g.fillRect(1250, 48, 168, 258);
+  // POLISH: an ordinary playbill on the wall reads back to front in the glass (only Dot's card is written reversed)
+  g.save(); g.translate(1334 * 2, 0); g.scale(-1, 1);
   g.fillStyle = '#5a1418'; g.textAlign = 'center';
   g.font = `14px ${FONTS.fell}`; g.fillText('EMPRESS THEATRE', 1334, 76);
   g.font = `26px ${FONTS.display}`; g.fillText('THE LAMP', 1334, 120); g.fillText('AT GULL', 1334, 150); g.fillText('POINT', 1334, 180);
   g.fillStyle = '#2a1c14'; g.font = `italic 15px ${FONTS.fell}`; g.fillText('with', 1334, 212); g.font = `17px ${FONTS.fell}`; g.fillText('Miss LAVINIA THRUSH', 1334, 236);
+  g.restore();
   g.fillStyle = '#a3201c'; g.fillRect(1262, 260, 144, 3);
   // the corner
   const cs = g.createLinearGradient(1480, 0, 1560, 0); cs.addColorStop(0, 'rgba(40,20,14,0)'); cs.addColorStop(0.5, 'rgba(40,20,14,0.45)'); cs.addColorStop(1, 'rgba(40,20,14,0.1)');
@@ -758,8 +761,11 @@ export function dressingTable() {
 // edge; setAngle(deg 0..60) lifts its back, moves the brass stay and drives the ash's print and glint.
 // =================================================================================================================
 export const SLOPE = { w: 0.42, d: 0.3, baseH: 0.045 };
-export const printFor = (deg) => (deg <= 20 || deg >= 60 ? 0 : deg < 35 ? (deg - 20) / 15 : deg <= 45 ? 1 : (60 - deg) / 15);
-export const legibleAt = (deg) => deg >= 35 && deg <= 45;
+// POLISH: the accept band was 35-45° while the print already read at ~46° (a click there said "Unreadable"). The band
+// is now 32-48°, the print is whole across it, and outside it the flecks thin out faster (see ashSheet.apply), so what
+// reads is what is accepted; the fade starts lower (18°) so there is a cue to keep tilting.
+export const printFor = (deg) => (deg <= 18 || deg >= 60 ? 0 : deg < 32 ? (deg - 18) / 14 : deg <= 48 ? 1 : (60 - deg) / 12);
+export const legibleAt = (deg) => deg >= 32 && deg <= 48;
 
 function leatherTex() {
   const W = 512, H = 384, [c, g] = cv(W, H);
@@ -795,8 +801,8 @@ export function ashSheet() {
     // through more of it as the angle nears the band) and dimmer; inside the band it comes up whole. It used to read
     // cleanly at 29°, where clicking it says "unreadable", so the click and the eye disagreed.
     const f = printFor(deg), whole = legibleAt(deg);
-    printMat.opacity = (whole ? 1 : 0.3 + 0.45 * f) * (0.25 + 0.75 * lit);
-    printMat.alphaTest = whole ? 0.001 : Math.max(0.001, printMat.opacity * (1 - 0.6 * f));
+    printMat.opacity = (whole ? 1 : 0.25 + 0.35 * f) * (0.25 + 0.75 * lit); // POLISH: thinner outside the band
+    printMat.alphaTest = whole ? 0.001 : Math.max(0.001, printMat.opacity * (1 - 0.4 * f));
     printMat.visible = printMat.opacity > 0.004;
     // the band slides from the bottom edge (flat) up and off the top (steep); brightest in the legible band
     const k = THREE.MathUtils.clamp(deg / 60, 0, 1);
@@ -1147,6 +1153,18 @@ function arcPlateTex() {
   for (const [txt, a] of [['SLOW', Math.PI / 2 + 0.6], ['FAST', Math.PI / 2 - 0.6]]) { g.save(); g.translate(C + Math.cos(a) * C * 0.58, C + Math.sin(a) * C * 0.58); g.rotate(a - Math.PI / 2); g.fillText(txt, 0, 0); g.restore(); }
   return tex(c);
 }
+// POLISH: the needle tin's lid (a cream disc with a red ring and the maker's words)
+function needleTinTex() {
+  const S = 256, [c, g] = cv(S, S), C = S / 2;
+  g.fillStyle = '#c8a050'; g.fillRect(0, 0, S, S);
+  g.fillStyle = '#efe0b8'; g.beginPath(); g.arc(C, C, C * 0.92, 0, TAU); g.fill();
+  g.strokeStyle = '#8a1a1c'; g.lineWidth = 10; g.beginPath(); g.arc(C, C, C * 0.8, 0, TAU); g.stroke();
+  g.fillStyle = '#8a1a1c'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.font = `bold 34px ${FONTS.fell}`; g.fillText('NEEDLES', C, C - 18);
+  g.fillStyle = '#2a1c14'; g.font = `italic 24px ${FONTS.fell}`; g.fillText('Loud Tone', C, C + 22);
+  g.font = `16px ${FONTS.fell}`; g.fillText('200', C, C + 52);
+  return tex(c);
+}
 function lidLabelTex() {
   return T.agedPaperTexture({ w: 512, h: 320, seed: 141, age: 0.5, tint: '#e8d8b0', key: 'dressing:gramlid', draw: (g, W, H) => {
     g.fillStyle = '#5a1418'; g.textAlign = 'center';
@@ -1223,17 +1241,33 @@ export function gramophone({ notch = 2 } = {}) {
   const notchAngle = (i) => -0.6 + 1.2 * i / 12;
   const notchFromAngle = (a) => THREE.MathUtils.clamp(Math.round((a + 0.6) / 1.2 * 12), 0, 12);
   // crank socket on the right side, and the winder that lives in it once wound
-  const socket = new THREE.Vector3(W / 2 + 0.002, 0.075, 0.06);
-  g.add(mesh(mergeG([cylG(0.016, 0.018, 0.006, 20).rotateZ(Math.PI / 2).translate(socket.x, socket.y, socket.z), cylG(0.006, 0.006, 0.01, 10).rotateZ(Math.PI / 2).translate(socket.x + 0.006, socket.y, socket.z)]), brass));
+  // POLISH: the socket was a flush brass disc on the side face, invisible from the close-up (the needle tin on the deck
+  // read as the socket instead). Now a polished boss stands well proud of the case with a dark square bore, so it
+  // shows past the case's right edge and catches the lamp (36 mm proud); the winder seats on its end.
+  const socket = new THREE.Vector3(W / 2 + 0.036, 0.085, 0.06);
+  const bossX = W / 2;
+  g.add(mesh(mergeG([
+    cylG(0.03, 0.03, 0.004, 28).rotateZ(Math.PI / 2).translate(bossX + 0.002, socket.y, socket.z),    // escutcheon
+    cylG(0.016, 0.021, 0.032, 24).rotateZ(Math.PI / 2).translate(bossX + 0.018, socket.y, socket.z),  // boss
+    cylG(0.02, 0.02, 0.004, 24).rotateZ(Math.PI / 2).translate(bossX + 0.034, socket.y, socket.z),    // lip
+  ]), M.brass({ polished: true })));
+  g.add(mesh(boxG(0.002, 0.011, 0.011, socket.x + 0.0001, socket.y, socket.z, 0.0005), new THREE.MeshBasicMaterial({ color: '#0a0806' }), { cast: false }));
   const winderPivot = grp('winderPivot'); winderPivot.position.copy(socket); g.add(winderPivot);
   const winder = winderHandle(); winder.rotation.y = 0; winderPivot.add(winder); winder.visible = false;
   // a little catch and a needle tin on the deck for clutter
-  g.add(mesh(mergeG([cylG(0.018, 0.018, 0.008, 18, -0.15, deckY + 0.004, 0.17)]), M.tarnishedBrass({ amount: 0.4 })));
+  // POLISH: the tin was a dark tarnished disc that read as a hole (the crank socket, to a player). Now a bright tin
+  // with a printed lid, a rolled rim, standing a little proud; it has its own caption (dressing.gramophone.tin).
+  const tinG = grp('needleTin'); tinG.position.set(-0.15, deckY, 0.165); g.add(tinG);
+  tinG.add(mesh(mergeG([cylG(0.021, 0.021, 0.012, 24, 0, 0.006, 0), cylG(0.022, 0.022, 0.003, 24, 0, 0.0125, 0)]), M.brass({ polished: true })));
+  tinG.add(at(mesh(new THREE.CircleGeometry(0.019, 32).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ map: needleTinTex(), roughness: 0.5, metalness: 0.2 }), { cast: false }), 0, 0.0142, 0));
+  const tinHit = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.03, 0.05), new THREE.MeshBasicMaterial({ visible: false }));
+  tinHit.position.set(0, 0.01, 0); tinHit.userData.hitProxy = true; tinG.add(tinHit);
 
   let playing = false, rpm = GRAM.notches[notch];
   const state = { notch };
   Object.assign(g.userData, {
     spin, rings, arm, setArm, lever, leverProxy, notchAngle, notchFromAngle, NOTCHES: GRAM.notches, winder, winderPivot, socket, deckY, platterCentre: pc,
+    needleTin: tinG, needleTinHit: tinHit, // POLISH
     setRpm(v) { rpm = v; },
     setPlaying(b) { playing = b; },
     setLever(i) { state.notch = i; lever.rotation.y = notchAngle(i); rpm = 66 + 2 * i; },

@@ -782,12 +782,14 @@ export function promptDesk({ w = 0.9, h = 1.15, d = 0.6, lamp = true, lit = 0, w
   return g;
 }
 
-/** A ceramic fuse carrier with brass blades and a coloured dot. Origin: centre. ~8 cm. 3 draw calls. */
+/** A ceramic fuse carrier with brass blades, a coloured dot and coloured end bands (POLISH). Origin: centre. ~8 cm. 4 draw calls. */
 export function fuse({ color = '#c8302a' } = {}) {
   const g = grp('fuse');
   g.add(mesh(boxG(0.04, 0.085, 0.035, 0, 0, 0, 0.008), M.porcelain('#efe9dc')));
   g.add(mergeInto([boxG(0.012, 0.025, 0.003, 0, 0.05, 0), boxG(0.012, 0.025, 0.003, 0, -0.05, 0)], M.brass()));
   g.add(at(mesh(new THREE.CircleGeometry(0.009, 16), M.enamel(color)), 0, 0, 0.0181));
+  // POLISH: a coloured band round each end, so a fuse seated end-on in its carrier still shows its colour
+  g.add(mergeInto([boxG(0.043, 0.01, 0.038, 0, 0.034, 0, 0.004), boxG(0.043, 0.01, 0.038, 0, -0.034, 0, 0.004)], M.enamel(color)));
   return g;
 }
 

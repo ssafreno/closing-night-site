@@ -123,5 +123,6 @@ export const lines = {
   'pit.delight.pike.4': pikePit[3],
   'pike.click.pit': pikePit, // ALIAS of pit.delight.pike.* (the engine's default click picks one)
   'pit.winch.nohandle': 'A winch with no handle. The trap stays shut.', // ADDED BY set-pit
+  'pit.pianoroll.eject': 'The pianola spits the roll out. It goes back in the rack.', // ADDED BY polish: the wrong-roll eject
   'pit.pianoroll.empty': 'The spool box is empty. The pianola waits for something to read.', // ADDED BY puzzles-pit
 };

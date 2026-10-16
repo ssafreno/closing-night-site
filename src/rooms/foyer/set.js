@@ -80,6 +80,32 @@ function foyerWallTexture() {
   const t = canvasTexture(c); t.wrapS = THREE.RepeatWrapping; t.wrapT = THREE.ClampToEdgeWrapping;
   return t;
 }
+// POLISH: a panel of faded old-gold silk damask, stretched inside a gilt moulding (UV 0..1 over the panel)
+function silkPanelTexture() {
+  const W = 256, H = 304, c = makeCanvas(W, H), g = c.getContext('2d'), r = rng(57);
+  g.fillStyle = '#6e5228'; g.fillRect(0, 0, W, H);
+  // the damask: a tall pomegranate repeat in a slightly brighter satin weave
+  g.fillStyle = 'rgba(214,176,104,0.22)';
+  for (let row = 0; row < 5; row++) for (let col = 0; col < 4; col++) {
+    const cx = (col + 0.5 + (row % 2) * 0.5) * W / 3.5 - W / 7, cy = (row + 0.5) * H / 4.5;
+    g.save(); g.translate(cx, cy);
+    g.beginPath(); g.moveTo(0, -30); g.bezierCurveTo(20, -22, 24, 4, 0, 30); g.bezierCurveTo(-24, 4, -20, -22, 0, -30); g.fill();
+    g.beginPath(); g.ellipse(-22, -4, 5, 13, -0.5, 0, TAU); g.ellipse(22, -4, 5, 13, 0.5, 0, TAU); g.fill();
+    g.beginPath(); g.ellipse(0, 36, 3, 6, 0, 0, TAU); g.fill();
+    g.restore();
+  }
+  // a fine vertical weave, and fading
+  for (let x = 0; x < W; x += 2) { g.fillStyle = `rgba(${r() < 0.5 ? '255,230,170' : '30,18,6'},${0.03 + r() * 0.03})`; g.fillRect(x, 0, 1, H); }
+  T.grime(g, W, H, { seed: 59, color: '#2a1a0c', octaves: [[3, 0.14], [12, 0.08]] });
+  // soot and shadow gathered at the moulding
+  const edge = (x0, y0, x1, y1) => { const gr = g.createLinearGradient(x0, y0, x1, y1); gr.addColorStop(0, 'rgba(26,14,6,0.55)'); gr.addColorStop(1, 'rgba(26,14,6,0)'); return gr; };
+  g.fillStyle = edge(0, 0, 0, 34); g.fillRect(0, 0, W, 34);
+  g.fillStyle = edge(0, H, 0, H - 26); g.fillRect(0, H - 26, W, 26);
+  g.fillStyle = edge(0, 0, 24, 0); g.fillRect(0, 0, 24, H);
+  g.fillStyle = edge(W, 0, W - 24, 0); g.fillRect(W - 24, 0, 24, H);
+  return canvasTexture(c);
+}
+
 function wallMaterial() {
   const map = foyerWallTexture();
   return new THREE.MeshStandardMaterial({ map, roughness: 0.88, shadowSide: THREE.DoubleSide });
@@ -268,6 +294,12 @@ export function buildSet(ctx, G) {
   for (const z of [1.4, 4.4]) panelRect(z, 2.75, 2.2, 2.6, (geo) => onE(geo));
   for (const x of [-4.5, -1.5, 1.5, 4.5]) panelRect(-x, 2.75, 2.2, 2.6, (geo) => onS(geo));
   G.add(mergeInto(panels, gilt, { cast: false }));
+  // POLISH: the panels were bare wallpaper inside their gilt mouldings, which read as empty picture frames. Each now
+  // holds a stretched silk damask infill, faded old gold, soot-darkened at the edges (one merged mesh, one call).
+  const silk = [];
+  for (const z of [1.4, 4.4]) silk.push(onE(new THREE.PlaneGeometry(2.11, 2.51).translate(z, 2.75, 0.006)));
+  for (const x of [-4.5, -1.5, 1.5, 4.5]) silk.push(onS(new THREE.PlaneGeometry(2.11, 2.51).translate(-x, 2.75, 0.006)));
+  G.add(noRay(mergeInto(silk, new THREE.MeshStandardMaterial({ map: silkPanelTexture(), roughness: 0.62, metalness: 0.05 }), { cast: false })));
 
   // marble pilasters / columns flanking the street entrance and at the corners of the north wall
   for (const x of [-1.95, 1.95]) { const col = T.marbleColumn({ h: 4.4, r: 0.22, order: 'ionic', fluted: false }); at(col, x, 0, R.z0 + 0.26); G.add(col); }
@@ -409,8 +441,10 @@ export function buildSet(ctx, G) {
     setPresent(on) { trumpet.visible = !!on; trumpetGlint.visible = !!on; h.earTrumpet.hit.visible = true; },
   };
   h.earTrumpet.hit.position.set(STAIR_X1 + 0.18, HATCH.y0 + 0.08, -2.1); G.add(h.earTrumpet.hit);
-  const tub = D.umbrellaTub({ count: 18 }); at(tub, STAIR_X1 + 0.42, 0, -2.0); G.add(tub);
-  h.umbrellas = { object: tub, hit: D.hitBox(0.6, 0.88, 0.6) }; h.umbrellas.hit.position.set(STAIR_X1 + 0.42, 0.44, -2.0); G.add(h.umbrellas.hit);
+  // POLISH: the tub stands against the stair panelling, clear of the counter (it stood right under the trumpet)
+  const TUB = { x: STAIR_X1 + 0.32, z: -1.05 };
+  const tub = D.umbrellaTub({ count: 18 }); at(tub, TUB.x, 0, TUB.z); G.add(tub);
+  h.umbrellas = { object: tub, hit: D.hitBox(0.6, 0.88, 0.6) }; h.umbrellas.hit.position.set(TUB.x, 0.44, TUB.z); G.add(h.umbrellas.hit);
   // dado on the spandrel face
   const sd = [];
   for (const [z0, z1] of [[LANDING_Z0, HATCH.z0 + 0.06], [HATCH.z1 - 0.06, PASS.z + PASS.w / 2 + 0.1], [PASS.z - PASS.w / 2 - 0.1, LANDING_Z1]]) {
@@ -505,9 +539,11 @@ export function buildSet(ctx, G) {
 
   // the TONIGHT frame: the bill torn out, the glass door hanging open, six pieces against the wall below
   const TON = { x: -2.85, y: 1.38 };
+  // POLISH: the glass door hangs square to the wall (was 0.82 ≈ 75°, which crossed the bill's left column in the close-up)
+  const POSTER_DOOR_OPEN = 1.0;
   const frame = T.posterFrame({ w: D.BILL.w, h: D.BILL.h, texture: emptyFrameTexture(), style: 'gilt', door: true, border: 0.07 });
   at(frame, TON.x, TON.y, R.z0); G.add(keep(frame));
-  frame.userData.setOpen(0.82); frame.userData.door.rotation.z = -0.035;
+  frame.userData.setOpen(POSTER_DOOR_OPEN); frame.userData.door.rotation.z = -0.035;
   const tonPlate = textPlate('TONIGHT', 0.34, { style: 'brass', pw: 512, ph: 128 }); tonPlate.position.set(TON.x, TON.y + D.BILL.h / 2 + 0.13, R.z0 + 0.012); G.add(tonPlate);
   const lastTex = D.lastNightTexture();
   const pieceMat = new THREE.MeshStandardMaterial({ map: lastTex, roughness: 0.88, side: THREE.DoubleSide });
@@ -536,7 +572,8 @@ export function buildSet(ctx, G) {
   h.poster = {
     object: frame, frameDoor: frame.userData.door, pieces, plate: tonPlate,
     hit: D.hitBox(D.BILL.w + 0.14, D.BILL.h + 0.14, 0.12),
-    /** The glass door: 0 shut, 1 wide (it hangs open at 0.82 until the bill is whole). */
+    /** The glass door: 0 shut, 1 wide (it hangs open at `doorOpen` until the bill is whole). */
+    doorOpen: POSTER_DOOR_OPEN, // POLISH
     setDoor(t) { frame.userData.setOpen(t); frame.userData.door.rotation.z = t > 0.5 ? -0.035 : 0; dirtyShadows(); },
     /** The frame plane (world): pieces snap within 6 cm of their `home`. */
     snap: 0.06,
@@ -659,7 +696,8 @@ export function buildSet(ctx, G) {
   const safe = D.foyerSafe(); at(safe, 7.0, 0, -6.47, -Math.PI / 4); booth.add(keep(safe));
   const sfu = safe.userData;
   const safeHit = D.hitBox(0.8, 1.1, 0.75); safe.add(safeHit); safeHit.position.set(0, 0.55, 0);
-  const sfFocusPos = world(safe, v3(0, 0.62, 1.05)), sfLook = world(safe, v3(0, 0.6, 0.3));
+  // POLISH: a touch further back and lower, so the maker's transfer at the foot of the door clears the inventory bar
+  const sfFocusPos = world(safe, v3(0, 0.57, 1.17)), sfLook = world(safe, v3(0, 0.54, 0.3));
   h.safe = {
     object: safe, hit: safeHit, ...sfu,
     get value() { return sfu.value; },
@@ -711,15 +749,28 @@ export function buildSet(ctx, G) {
   const house = keep(grp('auditoriumGlimpse')); at(house, R.x1, 0, AUD.z, -Math.PI / 2); G.add(house);
   const hm = M.matte('#1a0c0c', { roughness: 0.95 });
   house.add(mergeInto([
-    boxG(14, 0.02, 18, 0, -0.01, -9.2, 0.002), boxG(0.1, 9, 18, -7, 4.5, -9.2, 0.002), boxG(0.1, 9, 18, 7, 4.5, -9.2, 0.002), boxG(14, 0.1, 18, 0, 9, -9.2, 0.002),
+    boxG(14, 0.02, 18, 0, -0.01, -9.2, 0.002), boxG(14, 0.1, 18, 0, 9, -9.2, 0.002),
     boxG(1.6, 0.1, 0.4, -AUD.w / 2 - 0.8, AUD.h + 0.1, -0.2, 0.002),
   ], hm, { cast: false }));
+  // POLISH: the side walls in the foyer's own damask (shared material) so the house reads as a lit room, not a black box
+  // (from the vantage the open leaf shows only the near side wall); was part of the near-black matte
+  const hwGeo = mergeG([wallGeo(18, 9).rotateY(Math.PI / 2).translate(-7, 0, -9.2), wallGeo(18, 9).rotateY(-Math.PI / 2).translate(7, 0, -9.2)]);
+  house.add(mesh(hwGeo, wallMat, { cast: false }));
   // a glimpse only: four short rows (the full block is ~115k triangles), and nothing in the house casts
-  const rows = T.makeRows({ rows: 4, perRow: 10, spacing: 0.52, rowGap: 0.92, rake: 0.0, curve: 18, aisles: [4], tipped: 0.9, steps: false, seed: 6 });
+  // POLISH: 4 × 10 → 3 × 8 seats (74k → 45k triangles): the doorway only ever shows the middle of the front rows, and the
+  // cat's walk past the open doors (camera following him) peaked at 267k with the new proscenium
+  const rows = T.makeRows({ rows: 3, perRow: 8, spacing: 0.52, rowGap: 0.92, rake: 0.0, curve: 18, aisles: [3], tipped: 0.9, steps: false, seed: 6 });
   rows.position.set(0, 0, -8.0); rows.rotation.y = Math.PI; house.add(rows);
-  const cloth = mesh(new THREE.PlaneGeometry(9, 4.6), new THREE.MeshBasicMaterial({ map: T.seascapeTexture({ time: 'night', lighthouse: true, w: 1024, h: 512 }), color: '#5a6a8a' }), { cast: false, receive: false });
-  cloth.position.set(0, 3.2, -17.6); house.add(cloth);
-  house.add(mergeInto([boxG(1.2, 7.5, 0.6, -5.2, 3.75, -16.8, 0.01), boxG(1.2, 7.5, 0.6, 5.2, 3.75, -16.8, 0.01), boxG(11.6, 1.6, 0.6, 0, 6.8, -16.8, 0.01), boxG(11, 1.1, 1.2, 0, 0.55, -16.4, 0.01)], M.gilt({ pattern: 'acanthus' }), { cast: false }));
+  const cloth = mesh(new THREE.PlaneGeometry(9.4, 5.6), new THREE.MeshBasicMaterial({ map: T.seascapeTexture({ time: 'night', lighthouse: true, w: 1024, h: 512 }), color: '#5a6a8a' }), { cast: false, receive: false });
+  cloth.position.set(0, 3.8, -17.6); house.add(cloth); // POLISH: fills the new arch's opening (was 9 × 4.6 at 3.2)
+  // POLISH: the real gilt proscenium (5 calls) on the stage front, in place of four acanthus-mapped boxes whose texture
+  // stretched to metres and read as wood planks; the stage front is dark panelling
+  const pros = T.proscenium({ w: 14, h: 7.9, opening: [8.4, 5.3], depth: 0.4, rise: 0.7 });
+  pros.position.set(0, 1.1, -16.8); house.add(pros);
+  house.add(mesh(boxG(11, 1.1, 1.2, 0, 0.55, -16.4, 0.01), M.wood({ tint: '#2a1a10' }), { cast: false }));
+  // POLISH: the side-wall sconces lit with the house (sprites, no lights)
+  const sconces = [];
+  for (const sx of [-1, 1]) for (const z of [-4, -10]) { const s = halo('#ffc070', 1.1, 0); s.position.set(sx * 6.85, 3.6, z); house.add(s); sconces.push(s); }
   const rbox = T.royalBox({ w: 2.2, h: 2.4, d: 1.2 }); rbox.position.set(-6.2, 2.6, -12.5); rbox.rotation.y = Math.PI / 2; house.add(rbox);
   const royalGlow = halo('#ffc860', 3.2, 0); royalGlow.position.set(-5.6, 3.6, -12.5); house.add(royalGlow);
   const houseLight = new THREE.PointLight('#ffb070', 0, 22, 1.6); houseLight.position.set(0, 6.5, -9); house.add(houseLight);
@@ -744,6 +795,7 @@ export function buildSet(ctx, G) {
     gapGlow.material.opacity = houseK * (open ? 0 : 0.9);
     spill.material.opacity = houseK * (open ? 0.55 : 0.28);
     houseLight.intensity = houseK * 30; royalGlow.material.opacity = houseK * 0.7; royalGlow.visible = houseK > 0.01;
+    for (const s of sconces) { s.material.opacity = houseK * 0.8; s.visible = houseK > 0.01; } // POLISH
     audLight.intensity = houseK * (open ? 6 : 1.5);
   };
   const audLight = new THREE.PointLight('#ffae60', 0, 6, 2); audLight.position.set(R.x1 - 0.4, 0.4, AUD.z); G.add(audLight);

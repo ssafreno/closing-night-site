@@ -35,7 +35,11 @@ export default function rack(ctx, room, h) {
       }
       sfx('rackSlide', 0.35);
       u = U_OPEN;
-      room.focusOn(view(), VIEW, 'rack', { onExit: () => { drag = null; const p = R.presented(); if (p != null) R.restTag(p); } });
+      room.focusOn(view(), VIEW, 'rack', {
+        onExit: () => { drag = null; const p = R.presented(); if (p != null) R.restTag(p); },
+        // POLISH: Esc / Back with a tag held up lowers the tag first; the next one leaves the rack
+        onBack: () => { const p = R.presented(); if (p == null || busy) return false; sfx('fabricRustle', 0.25); R.restTag(p); return true; },
+      });
       if (!state.get('wardrobe.rack.firstsaid')) {
         state.set('wardrobe.rack.firstsaid', true);
         room.later(0.8, () => dialogue.say('wardrobe.rack.first'));

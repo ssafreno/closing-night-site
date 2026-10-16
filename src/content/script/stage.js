@@ -86,6 +86,8 @@ export const lines = {
 
   // ── the lamp (loose end) ───────────────────────────────────────────────────────────────────────────────────
   'loose.lamp': [L('The lamp, darling. It goes up in the lighthouse, not in your pocket.')],
+  // ADDED BY polish: the lamp used on the lighthouse before the lighthouse is set (loose.lamp read oddly there)
+  'loose.lamp.early': [L('The lighthouse first, darling. The lamp goes on last, like the star.')],
   'loose.lamp.placed': [
     N('You climb the ladder. The lighthouse is eleven feet tall and mostly canvas.'),
     L("Perfect. Don't light it. It has a cue."),

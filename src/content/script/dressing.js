@@ -51,6 +51,7 @@ export const lines = {
 
   // ── gramophone ─────────────────────────────────────────────────────────────────────────────────────────────
   'dressing.gramophone.unwound': "The platter won't turn. There's a crank socket in the side, and no crank in it.", // ADDED BY puzzles-dressing
+  'dressing.gramophone.tin': 'A tin of gramophone needles. LOUD TONE, it says, as a warning.', // ADDED BY polish: the needle tin (it read as the crank socket)
   'dressing.gramophone.note': [L("I'll give you the note, darling. Make me agree with myself.")],
   'dressing.gramophone.low': [L('I never sounded like Mr Volley.')],
   'dressing.gramophone.high': [L('I never sounded like a bee.')],

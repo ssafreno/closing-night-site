@@ -20,6 +20,10 @@ import * as THREE from 'three';
 const TAU = Math.PI * 2;
 const _v = new THREE.Vector3();
 const _q = new THREE.Quaternion();
+// POLISH: step aside in close-ups (see Character._focusAside)
+const _asideCam = new THREE.PerspectiveCamera(60, 1, 0.03, 50);
+const _ap = new THREE.Vector3();
+const _aT = new THREE.Vector3();
 
 /** Base class: placement, hotspot, glide, look-at, reactions bookkeeping. Subclasses build `this.body` and animate. */
 export class Character {
@@ -44,6 +48,66 @@ export class Character {
   }
 
   get name() { return this.ctx.dialogue?.speaker?.(this.who)?.name || this.who; }
+
+  /**
+   * POLISH: a global "step aside" rule for close-ups. Returns a 0..1 visibility multiplier (eased) that the ghost
+   * characters apply to their presence: in a focus view whose final framing would have this character in the
+   * foreground (nearer than the subject), filling most of the frame, or cropped at the head, they fade out of the
+   * shot and fade back when the view changes. Their light is untouched (the close-up keeps its lighting), and they
+   * cannot be clicked while faded. Checked against the close-up's final pose, so a camera tween never flickers it.
+   */
+  _focusAside(dt) {
+    const rig = this.ctx.camera, pose = rig?.focusPose;
+    if (this._asideK === undefined) { this._asideK = 1; this._asideWant = 1; this._asideClock = 0; this._asideKey = null; }
+    if (!pose || !this.group.parent || !this.group.visible) this._asideWant = 1;
+    else {
+      this._asideClock -= dt;
+      const key = `${pose.position.x},${pose.position.z},${pose.rev || 0}`;
+      if (this._asideClock <= 0 || key !== this._asideKey) { this._asideKey = key; this._asideClock = 0.25; this._asideWant = this._asideJudge(pose) ? 0 : 1; }
+    }
+    const want = this._asideWant;
+    // out quickly (0.3 s) so she is gone by the time the tween lands; back in more gently
+    this._asideK = want < this._asideK ? Math.max(want, this._asideK - dt / 0.3) : Math.min(want, this._asideK + dt / 0.6);
+    return this._asideK;
+  }
+
+  /** True if, seen from the close-up's final pose, this character would crowd the shot. */
+  _asideJudge(pose) {
+    const three = this.ctx.camera?.camera;
+    const cam = _asideCam;
+    cam.position.copy(pose.position); cam.quaternion.copy(pose.quaternion);
+    cam.fov = pose.fov || three?.fov || 60; cam.aspect = three?.aspect || 1.6; cam.updateProjectionMatrix();
+    cam.updateMatrixWorld(true);
+    const dT = pose.lookAt ? _aT.copy(pose.lookAt).applyMatrix4(cam.matrixWorldInverse).z * -1 : 1;
+    this.group.updateWorldMatrix(true, true);
+    // sample points: head, chest, and a ring at the hips/hem (the gown and hands reach about 0.45 m out)
+    const pts = [];
+    const head = this.head?.getWorldPosition(new THREE.Vector3());
+    const chest = this.chest?.getWorldPosition(new THREE.Vector3()) || this.group.localToWorld(new THREE.Vector3(0, 1.2, 0));
+    if (head) pts.push(['head', head]);
+    pts.push(['chest', chest]);
+    const chestLocal = this.group.worldToLocal(chest.clone());
+    for (const y of [chestLocal.y - 0.45, Math.max(chestLocal.y - 1.05, -0.8)]) {
+      for (const [x, z] of [[0, 0], [0.45, 0], [-0.45, 0], [0, 0.45], [0, -0.35]]) pts.push(['body', this.group.localToWorld(new THREE.Vector3(x, y, z))]);
+    }
+    let inFrame = false, nearest = Infinity, top = -Infinity, bottom = Infinity, headCut = false, chestIn = false;
+    for (const [name, p] of pts) {
+      const dz = -_ap.copy(p).applyMatrix4(cam.matrixWorldInverse).z;
+      if (dz < 0.05) { if (name === 'head') headCut = true; continue; }
+      _ap.copy(p).project(cam);
+      const on = Math.abs(_ap.x) < 1.05 && Math.abs(_ap.y) < 1.05;
+      if (on) { inFrame = true; nearest = Math.min(nearest, dz); }
+      else if (dz < 0.6 && Math.abs(_ap.x) < 1.8 && Math.abs(_ap.y) < 1.8) { inFrame = true; nearest = Math.min(nearest, dz); } // a gown edge just past the frame, very close
+      if (name === 'chest' && on) chestIn = true;
+      if (name === 'head' && _ap.y > 0.93) headCut = true;
+      top = Math.max(top, _ap.y); bottom = Math.min(bottom, _ap.y);
+    }
+    if (!inFrame) return false;
+    if (nearest < dT - 0.2) return true;              // in front of what the close-up is for
+    if (top - bottom > 1.5) return true;              // fills most of the frame height
+    if (chestIn && headCut) return true;              // body in frame, head cropped
+    return false;
+  }
 
   placeAt(parentGroup, { position = [0, 0, 0], rotationY = 0, pose = null, hotspot = null, label = null, scope = null } = {}) {
     if (parentGroup && this.group.parent !== parentGroup) parentGroup.add(this.group);
@@ -79,7 +143,7 @@ export class Character {
     if (!hs?.add) return;
     hs.add({
       id: this.who, object: this._hitObject(), label: this._label || this.name, scope: this._scope,
-      enabled: () => this.group.visible && !!this.group.parent,
+      enabled: () => this.group.visible && !!this.group.parent && (this._asideK ?? 1) > 0.5, // POLISH: not while stepped aside
       onClick: () => this.onClick(),
       ...(this._hotspotExtra || {}),
     });

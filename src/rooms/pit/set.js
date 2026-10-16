@@ -86,7 +86,11 @@ export function buildSet(ctx, group) {
   // the steep stair up to the stage
   const stair = X.pitStair({ h: 2.97, run: 1.95, w: 0.74, steps: 13 });
   stair.position.set(1.28, 0, 4.78); G.add(stair);
-  const stairProxy = X.proxy(0.9, 2.6, 2.1); stairProxy.position.set(1.28, 1.3, 5.75); G.add(stairProxy);
+  // POLISH: a slab along the flight (treads, stringers and the rail) instead of its bounding box, which took in the
+  // brick wall above the stair
+  const stairAng = Math.atan2(2.97, 1.95);
+  const stairProxy = X.proxy(0.95, 1.0, Math.hypot(2.97, 1.95) + 0.2); stairProxy.rotation.x = -stairAng;
+  stairProxy.position.set(1.24, 1.485 + 0.3 * Math.cos(stairAng), 4.78 + 0.975 - 0.3 * Math.sin(stairAng)); G.add(stairProxy);
   H.doors.stairs = { object: stairProxy, stair, hatch: ceil2, highlight: stair };
   // pipes along the far wall and the apron edge: a little plumbing to drip
   G.add(mergeInto([cylG(0.03, 0.03, 14.6, 10).rotateX(Math.PI / 2).translate(1.6, 2.62, -0.6), cylG(0.02, 0.02, 3.3, 8).rotateZ(Math.PI / 2).translate(0, 2.4, -7.9), cylG(0.02, 0.02, 2.4, 8, -1.55, 1.2, -7.92)], M.iron({ color: '#3a3a36', roughness: 0.6 })));
@@ -170,12 +174,13 @@ export function buildSet(ctx, group) {
   // =====================================================================================================
   // THE BAND: dust-sheeted instruments 1–5, chairs and stands, the conductor's stand
   // =====================================================================================================
+  // POLISH: each sheet's label names the shape under it (all five were 'Dust sheet')
   const sheetDefs = [
-    { name: 'harp', z: 1.35, x: 0.62, ry: 0.3, sheet: { shape: 'cone', w: 0.8, d: 0.6, h: 1.88, color: '#c9a29a', seed: 11, segA: 40, segS: 16 }, make: X.harp },
-    { name: 'tuba', z: -0.25, x: 0.6, ry: -0.4, sheet: { shape: 'lump', w: 0.82, d: 0.74, h: 1.3, color: '#bf938c', seed: 12, segA: 34, segS: 14 }, make: X.tuba },
-    { name: 'cello', z: -1.75, x: 0.62, ry: 0.5, sheet: { shape: 'tall', w: 0.58, d: 0.5, h: 1.34, color: '#c79e96', seed: 13, segA: 28, segS: 12 }, make: X.cello },
-    { name: 'drums', z: -3.35, x: 0.55, ry: -0.5, sheet: { shape: 'low', w: 1.5, d: 1.05, h: 1.08, color: '#b88a84', seed: 14, segA: 28, segS: 12 }, make: X.drumKit },
-    { name: 'trombone', z: -5.05, x: 0.6, ry: 0.15, sheet: { shape: 'box', w: 1.3, d: 0.36, h: 1.1, color: '#c49a92', seed: 15, segA: 28, segS: 12 }, make: X.trombone },
+    { name: 'harp', label: 'Tall dust sheet', z: 1.35, x: 0.62, ry: 0.3, sheet: { shape: 'cone', w: 0.8, d: 0.6, h: 1.88, color: '#c9a29a', seed: 11, segA: 40, segS: 16 }, make: X.harp },
+    { name: 'tuba', label: 'Lumpy dust sheet', z: -0.25, x: 0.6, ry: -0.4, sheet: { shape: 'lump', w: 0.82, d: 0.74, h: 1.3, color: '#bf938c', seed: 12, segA: 34, segS: 14 }, make: X.tuba },
+    { name: 'cello', label: 'Narrow dust sheet', z: -1.75, x: 0.62, ry: 0.5, sheet: { shape: 'tall', w: 0.58, d: 0.5, h: 1.34, color: '#c79e96', seed: 13, segA: 28, segS: 12 }, make: X.cello },
+    { name: 'drums', label: 'Wide dust sheet', z: -3.35, x: 0.55, ry: -0.5, sheet: { shape: 'low', w: 1.5, d: 1.05, h: 1.08, color: '#b88a84', seed: 14, segA: 28, segS: 12 }, make: X.drumKit },
+    { name: 'trombone', label: 'Long dust sheet', z: -5.05, x: 0.6, ry: 0.15, sheet: { shape: 'box', w: 1.3, d: 0.36, h: 1.1, color: '#c49a92', seed: 15, segA: 28, segS: 12 }, make: X.trombone },
   ];
   H.sheets = []; H.instruments = {};
   sheetDefs.forEach((d, i) => {
@@ -187,13 +192,13 @@ export function buildSet(ctx, group) {
     // a sheet that is off lies as a low heap: it stops casting (saves its shadow pass with the instrument showing)
     sh.userData.setOff = (v, instant) => { inst.visible = v > 0; sh.traverse((o) => { if (!o.isMesh) return; o.userData.cast0 ??= o.castShadow; o.castShadow = o.userData.cast0 && v < 1; }); setOff0(v, instant); };
     inst.visible = false;
-    const entry = { n: i + 1, name: d.name, group: sh, instrument: inst, setOff: sh.userData.setOff, isOff: sh.userData.isOff, focus: frame(inst, [0, 1.3, 1.6], [0, 0.7, 0]) };
+    const entry = { n: i + 1, name: d.name, label: d.label, group: sh, instrument: inst, setOff: sh.userData.setOff, isOff: sh.userData.isOff, focus: frame(inst, [0, 1.3, 1.6], [0, 0.7, 0]) };
     H.sheets.push(entry); H.instruments[d.name] = inst;
   });
   // the drum kit's beater, on the bass drum until taken; it hangs on a hook by the thunder sheet after `thunder`
   const kit = H.instruments.drums;
   const mal = X.mallet(); G.add(mal);
-  const malProxy = X.proxy(0.46, 0.14, 0.14); mal.add(malProxy); malProxy.position.x = 0.0;
+  const malProxy = X.proxy(0.68, 0.34, 0.36); mal.add(malProxy); malProxy.position.x = 0.0; // POLISH: was 0.46×0.14×0.14 (~34×11 px at the vantage); the drum hotspot is off while the beater lies here
   H.mallet = { group: mal, proxy: malProxy };
   H.drums = { group: kit, snareTap: kit.userData.snareTap, crash: kit.userData.crash, beat: kit.userData.bass.userData.beat, focus: frame(kit, [0.2, 1.45, 1.25], [0, 0.75, 0]) };
 
@@ -208,7 +213,9 @@ export function buildSet(ctx, group) {
   cond.position.set(0.05, 0, -6.95); cond.rotation.y = -1.22; cond.userData.keep = true; G.add(cond);
   // (ENGINE-FIX: qa-pit's desk lift moved into T.conductorStand.)
   const [sL, sR] = X.scoreTextures(); cond.userData.setScore(sL, sR);
-  const lampPt = new THREE.PointLight('#e8f0b0', 1.6, 3.2, 1.8); cond.userData.desk.add(lampPt); lampPt.position.set(0.22, 0.32, 0.25);
+  // POLISH: the lamp's light sat 25 cm off the right page, which blew the page (and the baton) out in the desk close-up
+  // and left the left page dim. Set higher and further out it lights the open score evenly, a little less hot.
+  const lampPt = new THREE.PointLight('#e8f0b0', 1.25, 3.2, 1.8); cond.userData.desk.add(lampPt); lampPt.position.set(0.1, 0.44, 0.46);
   const plan = mesh(new THREE.PlaneGeometry(0.17, 0.1275), new THREE.MeshStandardMaterial({ map: X.bandPlanTexture(), roughness: 0.9, side: THREE.DoubleSide }), { cast: false });
   // FIXED BY qa-pit: it was pinned low on the pedestal's side, out of the desk close-up and hidden behind the band from
   // the vantage (unreachable); now tucked under the score's corner, jutting off the desk's right edge, in the close-up

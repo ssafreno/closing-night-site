@@ -19,7 +19,10 @@ export const OPENING = { w: 9.4, h: 6.8, rise: 0.9 };
 export const VANTAGE = { position: [5.4, 1.6, 3.2], lookAt: [0.1, 0.9, -5.3], fov: 62, yawLimit: 85, pitchLimit: 34 };
 /** Arrival vantages per door (vantageFor). foyer, null (fresh load / title) and anything else use VANTAGE. */
 export const ARRIVALS = {
-  door: { position: [7.0, 1.6, -1.4], lookAt: [-3, 1.0, -2.2], fov: 62, yawLimit: 85, pitchLimit: 34 },
+  // FIXED BY release-qa: the fire bucket (fuse_r) sits under the pass door, behind this arrival: at yaw 85 it was out of
+  // reach (158° off the arrival's facing), so a first-time player arriving from the stage door could not find it without
+  // leaving the stage. 145 lets the look turn back to the dimmer board and the bucket at its foot (look down a little).
+  door: { position: [7.0, 1.6, -1.4], lookAt: [-3, 1.0, -2.2], fov: 62, yawLimit: 145, pitchLimit: 34 },
   wardrobe: { position: [-6.8, 1.6, -2.0], lookAt: [3.0, 1.0, 3.5], fov: 62, yawLimit: 85, pitchLimit: 34 },
   pit: { position: [-5.0, 1.6, 1.4], lookAt: [3, 1.0, -1.6], fov: 62, yawLimit: 85, pitchLimit: 34 },
   dressing: { position: [6.4, 1.6, -5.0], lookAt: [-1, 1.0, 0.2], fov: 62, yawLimit: 85, pitchLimit: 34 },
@@ -103,7 +106,9 @@ export const LOOKS = {
   // fresh: pitch black but the green-room spill, the shimmer, the dips, the EXIT signs
   dark: { ambient: 0.05, shim: 1, spill: 1, env: 0.035, exposure: 1.25 },
   // ghost light lit: one warm pool, Pike's desk lamp
-  ghost: { ambient: 0.05, ghost: 1, spill: 1, desk: 1, houseGlow: 0.7, env: 0.04, exposure: 1.2 },
+  // POLISH: ambient 0.05 → 0.12 and env 0.04 → 0.06, with a longer-reaching ghost bulb (below): away from the pool the
+  // stage was black (back wall, wings, the rail) and read as a void; now its shapes show and the pool still owns it.
+  ghost: { ambient: 0.12, ghost: 1, spill: 1, desk: 1, houseGlow: 0.7, env: 0.06, exposure: 1.2 },
   // mains: the bulkhead work lights, flat and cool; the fly-rail lamp
   work: { ambient: 0.32, ghost: 1, spill: 0.8, desk: 1, work: 1, flyLamp: 1, houseGlow: 1, env: 0.16, exposure: 1.0 },
   // Q34 MOONLIGHT (Battens ¼ · Floats OUT · Limes ½ · Blues FULL): the stage's resting look after `dimmer`
@@ -488,7 +493,7 @@ export function buildSet(ctx, group) {
       setTotal: (lb) => slate.userData.setTotal(lb),
       /** The purchase line's hit box (drag it down to fly the cloth in). */
       purchase: null,
-      focus: F([-6.2, 1.5, line7Z + 0.2], [-7.9, 0.85, line7Z], 55),
+      focus: F([-6.15, 1.5, line7Z + 0.2], [-7.9, 0.72, line7Z], 55), // POLISH: tilted down so the bottom 28 lb weight clears the inventory bar
       tag: H.battenTag,
       cloth: H.backcloth,
     };
@@ -507,8 +512,12 @@ export function buildSet(ctx, group) {
     const c = T.cleat({ len: 0.22 });
     const p = railPt(-1.52, 1.25, 0.02);
     at(c, p.x + 0.04, p.y, p.z, Math.PI / 2); c.rotation.z = Math.PI / 2; G.add(c);
+    // POLISH: the cleat was a small black casting hidden behind the fuse, so the fuse seemed to float on the brick in
+    // the close-up. Longer (the horns show above and below the fuse) and in worn grey-painted iron that takes the light.
+    c.scale.setScalar(1.45);
+    c.traverse((o) => { if (o.isMesh) o.material = M.enamel('#6a6e74', { roughness: 0.5 }); });
     G.add(mesh(boxG(0.06, 1.4, 0.06, p.x - 0.01, 0.7, p.z, 0.004), ironB));
-    at(fuseB, p.x + 0.09, p.y + 0.07, p.z, Math.PI / 2); fuseB.rotation.x = 0.3; G.add(fuseB);
+    at(fuseB, p.x + 0.125, p.y + 0.07, p.z, Math.PI / 2); fuseB.rotation.x = 0.3; G.add(fuseB); // POLISH: hung in front of the (bigger) cleat, was 0.09
     const hit = proxy(0.45, 0.5, 0.45); hit.position.set(p.x + 0.12, p.y, p.z); G.add(hit);
     const sp = P.sparkles({ box: [0.14, 0.12, 0.14], center: [fuseB.position.x, fuseB.position.y, fuseB.position.z], count: 8, size: 0.035, color: '#cfe0ff', color2: '#ffffff' });
     G.add(sp);
@@ -691,7 +700,11 @@ export function buildSet(ctx, group) {
     const handle = mains.userData.handle;
     const handleHit = proxy(0.16, 0.42, 0.16); handleHit.position.set(0.06, 0.16, 0); handle.add(handleHit);
     const tagHit = proxy(0.16, 0.12, 0.08); tagHit.position.copy(mains.userData.tag.position); mains.add(tagHit);
-    const boxHit = proxy(0.62, 0.7, 0.3); boxHit.position.set(0.05, 0, 0.12); mains.add(boxHit);
+    // FIXED BY release-qa: the box's face sat 0.27 m off the wall, behind the dimmer cabinet's 0.43 m proxy beside it, so from
+    // the door arrival (and most of the stage-right side) the dimmer took nearly every click aimed at the mains. Its face now
+    // stands 0.45 m out, just proud of the dimmer's, so the visible edge of the switch-fuse answers to its name. Close-up
+    // slot and handle hits are unaffected (this box is room-scope only, and inactive proxies do not block).
+    const boxHit = proxy(0.62, 0.7, 0.5); boxHit.position.set(0.05, 0, 0.2); mains.add(boxHit);
     let hk = 0;
     H.mains = {
       object: mains, hit: boxHit, handle, handleHit, slotHits, tagHit, seated, colors: ['r', 'y', 'b'],
@@ -830,7 +843,9 @@ export function buildSet(ctx, group) {
   ghostGroup.add(ghost);
   {
     const bp = ghost.userData.bulbPos;
-    const pt = new THREE.PointLight('#ffb46b', 7, 13, 1.45); pt.position.copy(bp); ghostGroup.add(pt);
+    // POLISH: decay 1.45 → 1.0, range 13 → 18, 7 → 6: the same pool round the stand, but the bulb now carries to the
+    // back wall and the wings the way one bare lamp on an empty stage does (was black beyond ~5 m).
+    const pt = new THREE.PointLight('#ffb46b', 6, 18, 1.0); pt.position.copy(bp); ghostGroup.add(pt);
     rig.add('ghost', pt);
     const sp = new THREE.SpotLight('#ffb870', 34, 10, 1.22, 0.85, 1.5);
     sp.position.copy(bp).add(v3(0, 0.05, 0)); sp.target.position.set(0, 0, 0);
@@ -923,7 +938,7 @@ export function buildSet(ctx, group) {
     };
   }
   // spike marks: BLUE R.C., RED centre, YELLOW L.C. (all downstage of the backcloth line)
-  H.spikes = { centers: SPIKES, radius: 0.3 };
+  H.spikes = { centers: SPIKES, radius: 0.6 }; // POLISH: snap radius 0.3 → 0.6 m (marks 2.4 m apart; 0.3 often took two drags)
   for (const [name, col] of [['blue', '#2f62e0'], ['red', '#d0302a'], ['yellow', '#e6c22a']]) {
     const m = S.spikeMarks({ color: col, size: 1.5, arm: 0.28, tape: 0.055 });
     m.position.set(SPIKES[name][0], 0.002, SPIKES[name][1]); G.add(m);
@@ -946,7 +961,10 @@ export function buildSet(ctx, group) {
     glint.visible = false; truck.add(glint);
     const hit = proxy(1.6, 3.5, 1.6); hit.position.set(0, 1.75, 0); truck.add(hit);
     const turnHit = proxy(0.26, 0.5, 0.26); turnHit.position.copy(truck.userData.turnHandle.position).add(v3(0, 0.25, 0)); truck.add(turnHit);
-    const brakeHit = proxy(0.22, 0.14, 0.26); brakeHit.position.copy(truck.userData.brake.position).add(v3(0, 0.02, 0.08)); truck.add(brakeHit);
+    // FIXED BY release-qa: at 0.14 m tall the pedal's hit sat under the deck hit, so from the top-down view only a sliver
+    // (about 16 x 8 px at 1280 x 800) past the deck edge answered; a click a few px in landed on the truck body. It now
+    // rises above the deck like the turn handle's, so the whole pedal footprint takes the click.
+    const brakeHit = proxy(0.22, 0.5, 0.26); brakeHit.position.copy(truck.userData.brake.position).add(v3(0, 0.2, 0.08)); truck.add(brakeHit);
     // a top-only hit (the platform deck seen from above) for dragging in the top-down view
     const deckHit = proxy(1.55, 0.3, 1.55); deckHit.position.set(0, 0.25, 0); truck.add(deckHit);
     const pose = { x: TRUCK_PARK.x, z: TRUCK_PARK.z, r: TRUCK_PARK.r };

@@ -143,6 +143,16 @@ export default function pianoroll(ctx, room, h) {
       // a wrong roll (or any roll before tuning): 3 s, then it stops and ejects to the rack
       await performance(num, false, { sour: !tuned });
       unload();
+      // POLISH: say that the roll was kicked out (it went back to the rack with no word). When room.wrong is silent
+      // (attempts 2, 4, 5...) it is the only reply; before a spoken line it reads first (a line clears a caption), and
+      // wrong.2 already says it.
+      const n = (state.get('wrong.pianoroll') || 0) + 1;
+      const spoken = !tuned || num === 104 || n === 1 || n % 3 === 0;
+      const ejectLine = spoken && tuned && num !== 104 && dialogue.cycle('pit.pianoroll.wrong', { advance: false }) === 'pit.pianoroll.wrong.2';
+      if (!ejectLine && dialogue.has('pit.pianoroll.eject')) {
+        dialogue.caption('pit.pianoroll.eject');
+        if (spoken) await room.wait(2.2);
+      }
       if (!tuned) { audio?.play('error', { gain: 0.3 }); dialogue.say('pit.pianoroll.sour'); }
       else if (num === 104) { audio?.play('error', { gain: 0.3 }); state.inc('wrong.pianoroll'); dialogue.say('pit.pianoroll.bishop'); }
       else room.wrong('pianoroll');

@@ -39,6 +39,9 @@ export const lines = {
   'wardrobe.rubbing.wrong.1': 'A smudge of chalk, and nothing to show for it.',
   'wardrobe.rubbing.wrong.2': [L('Molly hid things with conviction, darling.')],
   // ADDED BY puzzles-wardrobe: the order pad clicked with no chalk to rub it; the red hatbox after the cape is out
+  // ADDED BY polish: the pad opened with the chalk in hand, and a click (not a rub) on it
+  'wardrobe.pad.chalk': "Pressed into the top sheet, the ghost of somebody's handwriting. You hold the chalk flat, ready to rub.",
+  'wardrobe.pad.dab': 'A single dab of chalk. It wants rubbing, side to side.',
   'wardrobe.pad.blank': 'The top sheet is blank. Pressed into it, very faintly, the ghost of somebody\'s handwriting.',
   'wardrobe.hatbox.empty': 'WET WEATHER. Empty now, apart from a smell of the seaside.',
   'wardrobe.rubbing.solved': [L('Molly always put the thing you wanted at the bottom. It built character.')],

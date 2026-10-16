@@ -1,7 +1,7 @@
 // lighthouse (ALIGN): the truck onto the blue spike, its door to the prompt side, the brake on (docs/rooms/stage.md).
 //   The lighthouse truck (room) → the top-down view from the fly gallery, framed like page 5 of the prompt book (the
 //   audience at the bottom, PROMPT at the bottom right). Pike says stage.lighthouse.pike on the first look.
-//   Drag the truck to roll it (truckRoll): released within 30 cm of a spike set's centre it snaps square onto it
+//   Drag the truck to roll it (truckRoll): released within 60 cm (POLISH: was 30) of a spike set's centre it snaps square onto it
 //   (spikeSnap), elsewhere it stays where it was dropped. The brass turn handle: a quarter turn clockwise per click
 //   (truckTurn). The brake pedal: click to set. Pose persists (stage.truck {x, z, r}).
 //   Blue, door to the prompt side (r = TRUCK_DOOR_PROMPT), brake → the truck settles, a glint in the empty lantern room,

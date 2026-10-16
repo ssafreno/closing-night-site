@@ -91,8 +91,15 @@ function escapeHtml(s) {
   return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 }
 
+// POLISH: straight double quotes in the script render as a pair of closing quotes in IM Fell ("I have seen it." read
+// as ”I have seen it.”); curl them: an opening quote after a start, space, bracket, dash or emphasis mark.
+export function smartQuotes(s) {
+  return String(s).replace(/(^|[\s(\[—–*])"/g, '$1\u201C').replace(/"/g, '\u201D');
+}
+
 /** Parse *emphasis* into tokens [{ch, em}]. */
 function tokenize(text) {
+  text = smartQuotes(text); // POLISH
   const out = [];
   let em = false;
   for (let i = 0; i < text.length; i++) {

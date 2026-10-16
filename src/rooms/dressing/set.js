@@ -645,8 +645,12 @@ export function buildSet(ctx, group) {
   const wv = ju.wheels.userData;
   for (let i = 0; i < 4; i++) {
     const wx = ju.wheels.position.x + wv.wheelX(i), wz = ju.wheels.position.z + 0.0105;
-    const up = proxy(0.016, 0.012, 0.012); up.position.set(wx, 0.006, wz); ju.clasp.add(up);
-    const dn = proxy(0.016, 0.012, 0.012); dn.position.set(wx, -0.006, wz); ju.clasp.add(dn);
+    // FIXED BY release-qa: the halves split at the axle's height on a plane 6 mm proud of the wheels, but the close-up looks
+    // down at ~29° and the value is centred toward the camera, so the split projected well below the digit in the window:
+    // "roll down" took the top three quarters of the wheel and "roll up" only a sliver under it, and a click on the visible
+    // lower half rolled the wrong way. Thin hits just in front of the wheels, split where the window's centre projects.
+    const up = proxy(0.016, 0.014, 0.004); up.position.set(wx, 0.0134, wz + 0.001); ju.clasp.add(up);
+    const dn = proxy(0.016, 0.014, 0.004); dn.position.set(wx, -0.0007, wz + 0.001); ju.clasp.add(dn);
     wheelHits.push({ up, down: dn });
   }
   const buttonHit = proxy(0.026, 0.026, 0.02); buttonHit.position.copy(ju.button.position).add(v3(0, 0, 0.006)); ju.clasp.add(buttonHit);

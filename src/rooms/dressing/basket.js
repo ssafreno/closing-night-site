@@ -1,5 +1,5 @@
 // basket (LIGHT): Crane's telegram, burned whole. After the mirror is lit, the basket gives up its ash onto the writing
-// slope; drag the slope up into the 35-45° band (the print is legible there under the mirror bulbs) and click the
+// slope; drag the slope up into the 32-48° band (POLISH: was 35-45) (the print is legible there under the mirror bulbs) and click the
 // sheet → `crane`, story beat 1. docs/rooms/dressing.md › basket.
 // State: `dressing.ashout`, `dressing.slope` (degrees), `dressing.basket.first.seen`, `solved.basket`.
 import { scope, beat } from './util.js';

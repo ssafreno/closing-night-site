@@ -133,8 +133,9 @@ export class Game {
 
     // fonts first: canvas textures bake text at build time
     if (document.fonts) {
-      const faces = ['32px "Abril Fatface"', '32px "IM Fell English"', 'italic 32px "IM Fell English"', '32px "Special Elite"', '32px "Homemade Apple"', '500 16px "Inter"', '600 16px "Inter"'];
-      await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f).catch(() => null))), new Promise((r) => setTimeout(r, 2500))]);
+      const faces = ['32px "Abril Fatface"', '32px "IM Fell English"', 'italic 32px "IM Fell English"', '32px "Special Elite"', '32px "Homemade Apple"', '32px "CN Hand Caps"', '500 16px "Inter"', '600 16px "Inter"']; // POLISH: + CN Hand Caps
+      // POLISH: load() tests a space by default, which the capitals-only face's unicode-range excludes; give it capitals
+      await Promise.race([Promise.all(faces.map((f) => document.fonts.load(f, f.includes('Caps') ? 'AZ' : undefined).catch(() => null))), new Promise((r) => setTimeout(r, 2500))]);
     }
 
     const [script, papers, items] = await Promise.all([
@@ -223,7 +224,7 @@ export class Game {
     // do both)
     if (c.dialogue.isOpen && c.dialogue.dismiss()) return;
     if (c.dialogue.captionShowing) { c.dialogue.hideCaption(); return; }
-    if (c.camera.inFocus && !this._transitioning && !c.hotspots.locked) { c.camera.exitFocus(); return; }
+    if (c.camera.inFocus && !this._transitioning && !c.hotspots.locked) { if (!this._focusBack()) c.camera.exitFocus(); return; } // POLISH: onBack first
     if (c.inventory.selected) { c.inventory.deselect(); return; }
     this._roomBack();
   }
@@ -236,8 +237,13 @@ export class Game {
     const c = this.ctx;
     if (c.papers.isOpen) { c.papers.hide(); return; }
     if (c.journal.isOpen) { c.journal.close(); return; }
-    if (c.camera.inFocus) { c.camera.exitFocus(); return; }
+    if (c.camera.inFocus) { if (!this._focusBack()) c.camera.exitFocus(); return; } // POLISH: onBack first
     this._roomBack();
+  }
+  /** POLISH: the open close-up's own Back (focus({ onBack })), true when it handled the press. */
+  _focusBack() {
+    const pose = this.ctx.camera.focusPose;
+    try { return !!pose?.onBack?.(); } catch (err) { console.error(err); return false; }
   }
   _roomBack() {
     const c = this.ctx;

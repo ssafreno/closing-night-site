@@ -61,7 +61,14 @@ function drawBill(g, W, H) {
   const ink = '#1b120c', red = '#a3201c';
   g.textBaseline = 'alphabetic';
   g.strokeStyle = ink; g.lineWidth = 5; g.strokeRect(22, 22, W - 44, H - 44); g.lineWidth = 1.5; g.strokeRect(32, 32, W - 64, H - 64);
-  const C = (t, y, font, color = ink, align = 'center', x = W / 2) => { g.font = font; g.fillStyle = color; g.textAlign = align; g.fillText(t, x, y); };
+  // POLISH: every line is fitted inside the inner rule (LAST NIGHT, LAVINIA THRUSH and GULL POINT ran off the bill and
+  // under the frame's gilt); a line that fits is drawn exactly as before
+  const IN = 46;
+  const C = (t, y, font, color = ink, align = 'center', x = W / 2) => {
+    g.font = font; g.fillStyle = color; g.textAlign = align;
+    const room = align === 'right' ? x - IN : align === 'left' ? W - IN - x : W - 2 * IN;
+    g.fillText(t, x, y, room);
+  };
   const fell = FONTS.fell, disp = FONTS.display;
   C('EMPRESS THEATRE  ·  PELHAM STREET', 82, `600 34px ${fell}`);
   g.fillStyle = red; g.fillRect(120, 98, W - 240, 4);
@@ -592,6 +599,15 @@ export function foyerSafe() {
   const k = keyProp({ style: 'mortice', metal: 'iron', len: 0.11 }); k.rotation.set(-Math.PI / 2, 0, 0.3); keyTag.add(k);
   const tag = cardTag({ text: 'AUDITORIUM\nDOORS', w: 0.075, seed: 4 }); tag.position.set(0.075, 0.003, 0.02); tag.rotation.set(-Math.PI / 2, 0, -0.2); keyTag.add(tag);
   keyTag.position.set(0.1, dyc + 0.066, 0.0); g.add(keyTag);
+  // POLISH: the strong-room is dressed (it read as an empty box): two cash ledgers on the shelf, left of the key; a cash
+  // tin and a banded bundle of ticket stubs at the back of the floor, behind the envelope. None of it takes a click.
+  const shelfY = dyc + 0.066, floorY = y0 + 0.13;
+  g.add(noRay(mergeInto([boxG(0.15, 0.03, 0.21, -0.18, shelfY + 0.015, -0.06, 0.004), boxG(0.14, 0.026, 0.2, 0, 0, 0, 0.004).rotateY(0.06).translate(-0.175, shelfY + 0.043, -0.07)], M.leather('#4a1c18', { roughness: 0.7 }))));
+  g.add(noRay(mergeInto([boxG(0.146, 0.022, 0.205, -0.178, shelfY + 0.015, -0.055, 0.002), boxG(0.136, 0.018, 0.195, 0, 0, 0, 0.002).rotateY(0.06).translate(-0.171, shelfY + 0.043, -0.065)], M.matte('#d8cba8'))));
+  g.add(noRay(mesh(boxG(0.2, 0.09, 0.14, 0.15, floorY + 0.045, -0.17, 0.008), M.enamel('#3a1a16', { roughness: 0.5 }))));
+  g.add(noRay(mergeInto([boxG(0.07, 0.008, 0.014, 0.15, floorY + 0.094, -0.17, 0.003), boxG(0.03, 0.03, 0.004, 0.15, floorY + 0.06, -0.098, 0.002)], M.brass({ roughness: 0.35 }))));
+  g.add(noRay(mesh(boxG(0.12, 0.06, 0.07, 0, 0, 0, 0.004).rotateY(-0.25).translate(-0.17, floorY + 0.03, -0.2), M.matte('#c9a86a', { roughness: 0.95 }))));
+  g.add(noRay(mesh(boxG(0.124, 0.062, 0.012, 0, 0, 0, 0.002).rotateY(-0.25).translate(-0.17, floorY + 0.03, -0.2), M.matte('#7a2a20'))));
   // the ear trumpet pressed to the door (shown once the trumpet is used on the safe)
   const trumpet = keep(earTrumpet({ tag: false })); trumpet.scale.setScalar(1.15);
   trumpet.position.set(dw * 0.72, 0.16, fz + 0.075); trumpet.rotation.set(Math.PI / 2, 0.9, -0.5);
@@ -715,7 +731,7 @@ export const TICKET_WHEELS = [
   { id: 'area', title: 'AREA', labels: ['GALLERY', 'PIT', 'STALLS', 'CIRCLE', 'BOX'], w: 0.074 },
   { id: 'letter', title: 'ROW', labels: 'ABCDEFGHIJKLMNOP'.split(''), w: 0.042 },
   { id: 'price', title: 'PRICE', labels: ['6d', '1/-', '2/6', '3/6', '5/-', '10/6', '£1 1s', 'COMP'], w: 0.066 },
-  { id: 'day', title: 'DAY', labels: Array.from({ length: 31 }, (_, i) => String(i + 1)), w: 0.046 },
+  { id: 'day', title: 'DAY', labels: Array.from({ length: 31 }, (_, i) => String(i + 1)), w: 0.046, r: 0.1 }, // POLISH: r — a larger drum, taller day figures
   { id: 'month', title: 'MONTH', labels: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'], w: 0.056 },
 ];
 
@@ -754,11 +770,16 @@ export function ticketMachine({ values = [2, 2, 3, 12, 2] } = {}) {
     // square texels: one cell is the arc a label occupies, at the same px/m as the wheel's width (legible day numbers)
     // FIXED BY qa-foyer: the 31 day numbers were ~8 px tall at 1280x800 (a cell is only 13 mm of arc); fill more of it
     const fill = def.labels.length > 20 ? 0.9 : 0.62;
-    const PXM = 9000, tex = wheelTexture(def.labels, { cell: Math.round(TAU * wr / def.labels.length * PXM), width: Math.round(def.w * PXM), fill });
+    // POLISH: a wheel may carry its own radius (the 31-day drum: at the shared 65 mm a day was a 13 mm cell, ~14 px in
+    // the close-up); its front stays where the others' is, so it reads in the same window, the rest sits in the case
+    const r = def.r ?? wr;
+    const PXM = 9000, tex = wheelTexture(def.labels, { cell: Math.round(TAU * r / def.labels.length * PXM), width: Math.round(def.w * PXM), fill });
     tex.wrapS = THREE.RepeatWrapping;
-    const geo = new THREE.CylinderGeometry(wr, wr, def.w, Math.max(32, def.labels.length * 4), 1, false).rotateZ(Math.PI / 2);
+    const geo = new THREE.CylinderGeometry(r, r, def.w, Math.max(32, def.labels.length * 4), 1, false).rotateZ(Math.PI / 2);
     const wm = keep(mesh(geo, [new THREE.MeshStandardMaterial({ map: tex, roughness: 0.55 }), M.brass({ roughness: 0.35 }), M.brass({ roughness: 0.35 })], { cast: false }));
-    wm.position.set(cx, wy, BD / 2 - wr * 0.55); g.add(wm); wheels.push(wm);
+    // POLISH: a larger drum stands a little less proud, so it shows through the plate over about the others' height
+    const prot0 = wr * 0.45 - 0.001, visH = Math.sqrt(wr * wr - (wr - prot0) ** 2), protR = r - Math.sqrt(r * r - visH * visH), prot = protR + (prot0 - protR) * 0.3;
+    wm.position.set(cx, wy, BD / 2 + 0.001 + prot - r); g.add(wm); wheels.push(wm);
     // FIXED BY qa-foyer: the proxies stand in front of the drum's bulge (front at BD/2 + 0.45 wr); at BD/2 + 0.01 the
     // drum swallowed every click on the middle of the wheel (the label you read) and most of the lower half. Thin and
     // tangent to the drum's front so the up/down split falls on the label you read, not below it (the close-up looks down)

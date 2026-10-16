@@ -147,13 +147,15 @@ export class CameraRig {
    * Tween in to a close-up. Sets Interaction scope to `scope`, shows the HUD Back button.
    * Calling focus() while already focused pushes a nested focus (Back returns to the previous one).
    * `puzzle`: the puzzle id this close-up is for; Hints prefers it while it is unsolved (camera.focusPuzzle).
-   * @param {{position:number[]|THREE.Vector3, lookAt:number[]|THREE.Vector3, scope:string, duration?:number, fov?:number, onExit?:Function, puzzle?:string}} opts
+   * POLISH: `onBack()`: Esc / HUD Back ask it first; return true when it handled the press (a tag held up to the camera
+   * goes back down) and the close-up stays open.
+   * @param {{position:number[]|THREE.Vector3, lookAt:number[]|THREE.Vector3, scope:string, duration?:number, fov?:number, onExit?:Function, onBack?:Function, puzzle?:string}} opts
    */
-  async focus({ position, lookAt, scope = 'focus', duration = 0.7, fov, onExit, puzzle = null } = {}) {
+  async focus({ position, lookAt, scope = 'focus', duration = 0.7, fov, onExit, onBack, puzzle = null } = {}) {
     const pos = toV3(position);
     const m = new THREE.Matrix4().lookAt(pos, toV3(lookAt), new THREE.Vector3(0, 1, 0));
     const quat = new THREE.Quaternion().setFromRotationMatrix(m);
-    const pose = { position: pos, quaternion: quat, fov: fov ?? this.vantage.fov, scope, onExit, puzzle };
+    const pose = { position: pos, quaternion: quat, fov: fov ?? this.vantage.fov, scope, onExit, onBack, puzzle, lookAt: toV3(lookAt) }; // POLISH: + lookAt (characters step aside), + onBack
     if (this.inFocus && this._focusPose) this._focusStack.push(this._focusPose);
     this._focusPose = pose;
     this.inFocus = true;
@@ -163,6 +165,9 @@ export class CameraRig {
     await this._tweenPose(pos, quat, pose.fov, duration);
     if (this._focusPose === pose) this.mode = 'focus';
   }
+
+  /** POLISH: the innermost close-up's final pose { position, quaternion, fov, lookAt, rev } (null in the room view). */
+  get focusPose() { return this.inFocus ? this._focusPose : null; }
 
   /** The puzzle id of the innermost open close-up that named one (focus({ puzzle })), else null. */
   get focusPuzzle() {
@@ -179,6 +184,7 @@ export class CameraRig {
     const m = new THREE.Matrix4().lookAt(pos, toV3(lookAt), new THREE.Vector3(0, 1, 0));
     const pose = this._focusPose;
     pose.position = pos; pose.quaternion = new THREE.Quaternion().setFromRotationMatrix(m); pose.fov = fov ?? pose.fov;
+    pose.lookAt = toV3(lookAt); pose.rev = (pose.rev || 0) + 1; // POLISH: characters re-check their step-aside
     await this._tweenPose(pos, pose.quaternion, pose.fov, duration);
     if (this._focusPose === pose) this.mode = 'focus';
   }

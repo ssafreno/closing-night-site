@@ -8,7 +8,7 @@ export const FONTS = {
   fell: '"IM Fell English", Georgia, serif',
   display: '"Abril Fatface", Didot, "Bodoni 72", Georgia, serif',
   typed: '"Special Elite", "Courier New", monospace',
-  hand: '"Homemade Apple", "Segoe Script", cursive',
+  hand: '"CN Hand Caps", "Homemade Apple", "Segoe Script", cursive', // POLISH: legible capitals (ui.css @font-face)
   ui: 'Inter, system-ui, sans-serif',
 };
 

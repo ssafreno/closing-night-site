@@ -523,6 +523,7 @@ export class Pike extends Character {
     const pSpeed = this._presenceTarget < this._presence ? 1 / 2.6 : 1 / 1.5;
     this._presence = this._presenceTarget > this._presence ? Math.min(this._presenceTarget, this._presence + dt * pSpeed) : Math.max(this._presenceTarget, this._presence - dt * pSpeed);
     const pres = smooth(this._presence);
+    const presVis = pres * this._focusAside(dt); // POLISH: steps aside in close-ups (CompanionStub); the light keeps pres
 
     // walking (moveTo)
     const w = this._walk;
@@ -602,10 +603,10 @@ export class Pike extends Character {
     // uniforms and effects
     this._hover = damp(this._hover, this.ctx.hotspots?.hovered?.id === this.who ? 1 : 0, 8, dt);
     this.U.uHover.value = this._hover;
-    this.U.uPresence.value = pres;
+    this.U.uPresence.value = presVis; // POLISH
     this.group.updateWorldMatrix(true, false);
     this.U.uCharInv.value.copy(this.group.matrixWorld).invert();
-    this.haze.material.opacity = 0.09 * pres * (1 + 0.4 * this._hover);
+    this.haze.material.opacity = 0.09 * presVis * (1 + 0.4 * this._hover); // POLISH: presVis
     const op = this.motes.userData.pos, oc = this.motes.userData.col;
     if (this._moteBurst) { for (let i = 0; i < this._motes.length; i++) this._motes[i] = this._newMote(false, true); this._moteBurst = 0; }
     for (let i = 0; i < this._motes.length; i++) {
@@ -613,7 +614,7 @@ export class Pike extends Character {
       m.life += dt; m.y += m.vy * dt;
       if (m.life > m.max) { this._motes[i] = this._newMote(); continue; }
       op[i * 3] = m.x; op[i * 3 + 1] = m.y; op[i * 3 + 2] = m.z;
-      const f = Math.sin(PI * clamp(m.life / m.max, 0, 1)) * (m.burst ? 0.8 : i < 5 ? 0.35 * pres : 0) * (0.6 + 0.4 * Math.sin(t * 5 + m.ph));
+      const f = Math.sin(PI * clamp(m.life / m.max, 0, 1)) * (m.burst ? 0.8 : i < 5 ? 0.35 * presVis : 0) * (0.6 + 0.4 * Math.sin(t * 5 + m.ph));
       oc[i * 3] = f * 0.8; oc[i * 3 + 1] = f * 0.85; oc[i * 3 + 2] = f * 0.95;
     }
     this.motes.userData.commit();

@@ -1,7 +1,7 @@
 // Papers found in the Pit (docs/rooms/pit.md, Documents). WRITER owns this file. Shape: see src/content/papers.js.
 // (The prompt book's p.7, the music & effects plot, lives in papers/stage.js with the rest of the book.)
 
-const F = "font-family=\"'Homemade Apple',cursive\"";
+const F = "font-family=\"'CN Hand Caps','Homemade Apple',cursive\""; // POLISH: legible capitals (ui.css)
 
 // the first bar of The Empress March: C (ledger line), E, G, C' rising, with Pozzi's pencil letters under them
 const STAVE = (() => {

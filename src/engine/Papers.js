@@ -20,6 +20,8 @@ function esc(s) {
   return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 }
 function fmt(s) {
+  // POLISH: curly double quotes (see Dialogue.smartQuotes); applied before escaping so no &quot; is left to curl
+  s = String(s).replace(/(^|[\s(\[—–*])"/g, '$1\u201C').replace(/"/g, '\u201D');
   return esc(s).replace(/\*([^*]+)\*/g, '<em>$1</em>');
 }
 

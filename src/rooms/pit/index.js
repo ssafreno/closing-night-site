@@ -85,7 +85,7 @@ export default class PitRoom extends Room {
     // ==========================================================================================================
     // the five dust sheets (sliding them off is never wrong) and what is under them
     h.sheets.forEach((s, i) => {
-      spot(`sheet.${s.n}`, s.group, 'Dust sheet', null, {
+      spot(`sheet.${s.n}`, s.group, s.label || 'Dust sheet', null, { // POLISH: per-sheet label
         enabled: () => !s.isOff(),
         onClick: () => {
           s.setOff(1); audio.play('dustSheet', { gain: 0.7 });

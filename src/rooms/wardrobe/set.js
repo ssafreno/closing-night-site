@@ -207,6 +207,31 @@ export function buildSet(ctx, group) {
   }
 
   // ===================================================================================================================
+  // POLISH: the left wall between the rack and the stair end was a long blank stretch of whitewash. Brown-paper dress
+  // patterns now hang from bulldog clips on a batten there (no words, no notches: nothing to read as a clue), with a
+  // corded trunk on the floor below. 3 calls for the wall, ~4 for the trunk.
+  // ===================================================================================================================
+  {
+    const Y = 2.28, X = -W + 0.012;
+    const pieces = [[1.25, 0.46, 0.78, -0.03], [1.78, 0.4, 0.98, 0.05], [2.26, 0.5, 0.86, -0.06], [2.8, 0.36, 0.62, 0.04], [3.25, 0.44, 0.9, -0.02], [3.72, 0.38, 0.7, 0.07]];
+    const paper = [], clips = [];
+    pieces.forEach(([z, w, h, tilt], i) => {
+      const geo = new THREE.PlaneGeometry(w, h);
+      const uv = geo.attributes.uv; const u0 = i / pieces.length, du = 1 / pieces.length;
+      for (let k = 0; k < uv.count; k++) uv.setX(k, u0 + uv.getX(k) * du);
+      geo.translate(0, -h / 2 - 0.02, 0).rotateZ(tilt).rotateY(Math.PI / 2).translate(X + 0.004 + i * 0.0015, Y, z);
+      paper.push(geo);
+      clips.push(boxG(0.012, 0.035, 0.05, X + 0.014, Y - 0.01, z, 0.002), boxG(0.006, 0.03, 0.03, X + 0.024, Y + 0.012, z, 0.001));
+    });
+    G.add(noRay(mergeInto(paper, new THREE.MeshStandardMaterial({ map: patternAtlas(pieces), alphaTest: 0.5, side: THREE.DoubleSide, roughness: 0.92 }), { cast: false })));
+    G.add(noRay(mergeInto(clips, M.ironBlack(), { cast: false })));
+    G.add(noRay(mergeInto([boxG(0.025, 0.06, 2.95, -W + 0.0125, Y + 0.035, 2.5, 0.004)], M.wood({ tint: '#6a4a2c' }), { cast: false })));
+    const trunk = P.costumeTrunk({ w: 0.8, d: 0.44, h: 0.42, color: '#2e3a2c' });
+    trunk.traverse((o) => { if (o.isMesh) o.raycast = () => {}; });
+    G.add(at(trunk, -2.95, 0, 2.55, 0, Math.PI / 2 - 0.08, 0));
+  }
+
+  // ===================================================================================================================
   // THE COSTUME RACK (left wall): 12 garments on hangers, each with a card tag on a string
   // ===================================================================================================================
   const RACK = { x: -2.9, y: 1.95, z0: 0.85, z1: -3.45 };
@@ -440,7 +465,7 @@ export function buildSet(ctx, group) {
     G.add(at(P.shears({ open: 0.3 }), -0.78, Y + 0.001, -0.18, 0, 2.4, 0));
     // tailor's chalk (takeable; glints)
     const chalk = keep(P.chalkStick()); chalk.position.set(-0.3, Y + 0.002, 0.4); chalk.rotation.y = 0.5; G.add(chalk);
-    const chalkGlint = P.glint({ size: 0.07, phase: 1.3 }); chalkGlint.position.set(0.01, 0.02, 0); chalk.add(chalkGlint);
+    const chalkGlint = P.glint({ size: 0.12, phase: 1.3, rate: 1.3 }); chalkGlint.position.set(0.01, 0.02, 0); chalk.add(chalkGlint); // POLISH: size 0.07 → 0.12, glints more often
     const chalkHit = proxy(0.1, 0.06, 0.1, chalk, 0, 0.02, 0);
     H.chalk = { object: chalk, hit: chalkHit, glint: chalkGlint, setPresent: (b) => { chalk.visible = !!b; chalkGlint.userData.setOn(!!b); }, setGlint: (b) => chalkGlint.userData.setOn(!!b), worldPos: () => chalk.getWorldPosition(new THREE.Vector3()) };
     // the order pad
@@ -687,7 +712,9 @@ export function buildSet(ctx, group) {
       sizes: SIZES, correct: [2, 4, 0, 3, 1], stack, liftRing, dropOnSpindle, popTop, returnRing, wobbleAndReturn, setSolved, setStack, setTaken, takeLamp,
       worldPos: () => lamp.getWorldPosition(new THREE.Vector3()),
       hit: proxy(1.4, 0.42, 0.42, G, 1.76, Y + 0.2, SHELF_Z + 0.02), // stops short of the props card on the left
-      focus: { position: [1.62, Y + 0.45, SHELF_Z + 1.1], lookAt: [1.6, Y + 0.08, SHELF_Z] },
+      // POLISH: square on to the tray and on a longer lens (was x 1.62, 1.1 m off, the default 60° fov): the wide angle
+      // stretched the rings at the tray's right end, so the 19 cm ring there read as wide as the 22
+      focus: { position: [1.62, Y + 0.52, SHELF_Z + 1.45], lookAt: [1.6, Y + 0.16, SHELF_Z], fov: 44 },
     };
   }
 
@@ -888,4 +915,37 @@ export function buildSet(ctx, group) {
   }
 
   return H;
+}
+
+// POLISH: brown-paper dress pattern pieces, one per atlas column (transparent around each cut shape). Seam allowances
+// dashed, a grain-line arrow, pencilled darts. No words and no notches.
+function patternAtlas(pieces) {
+  const CW = 160, CH = 300, c = makeCanvas(CW * pieces.length, CH), g = c.getContext('2d'), r = rng(73);
+  pieces.forEach(([, w, h], i) => {
+    const x0 = i * CW + 6, x1 = (i + 1) * CW - 6, y0 = 6, y1 = CH - 6, mx = (x0 + x1) / 2;
+    const k = i % 3;
+    g.beginPath();
+    if (k === 0) { g.moveTo(x0 + 18, y0); g.lineTo(x1 - 30, y0); g.quadraticCurveTo(x1 - 20, y0 + 40, x1, y0 + 60); g.lineTo(x1 - 14, y1); g.lineTo(x0, y1); g.lineTo(x0 + 10, y0 + 80); g.quadraticCurveTo(x0 + 30, y0 + 40, x0 + 18, y0); }
+    else if (k === 1) { g.moveTo(mx - 24, y0); g.lineTo(mx + 24, y0); g.lineTo(x1, y1); g.quadraticCurveTo(mx, y1 - 14, x0, y1); g.closePath(); }
+    else { g.moveTo(x0 + 30, y0); g.quadraticCurveTo(mx, y0 + 30, x1 - 30, y0); g.lineTo(x1, y0 + 50); g.quadraticCurveTo(x1 - 26, y0 + 70, x1 - 22, y0 + 120); g.lineTo(x1 - 4, y1); g.lineTo(x0 + 4, y1); g.lineTo(x0 + 22, y0 + 120); g.quadraticCurveTo(x0 + 26, y0 + 70, x0, y0 + 50); g.closePath(); }
+    g.save(); g.clip();
+    const tone = ['#c4a476', '#b8986a', '#cdb084'][k];
+    g.fillStyle = tone; g.fillRect(i * CW, 0, CW, CH);
+    for (let n = 0; n < 220; n++) { g.fillStyle = `rgba(${r() < 0.5 ? '90,62,30' : '240,220,180'},${0.05 + r() * 0.06})`; g.fillRect(i * CW + r() * CW, r() * CH, 1 + r() * 3, 1); }
+    // a fold crease or two, and edge wear
+    g.strokeStyle = 'rgba(90,62,30,0.28)'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(i * CW, CH * (0.35 + r() * 0.2)); g.lineTo((i + 1) * CW, CH * (0.35 + r() * 0.2)); g.stroke();
+    g.restore();
+    g.save(); g.strokeStyle = 'rgba(70,46,22,0.6)'; g.lineWidth = 2; g.stroke(); g.restore();
+    // dashed seam line inside the edge (the clip path, inset by scaling about the centre)
+    g.save(); g.translate(mx, CH / 2); g.scale(0.86, 0.93); g.translate(-mx, -CH / 2);
+    g.setLineDash([7, 5]); g.strokeStyle = 'rgba(60,40,20,0.55)'; g.lineWidth = 1.4; g.stroke(); g.restore();
+    // grain-line arrow
+    g.strokeStyle = 'rgba(50,34,18,0.7)'; g.lineWidth = 1.6; g.setLineDash([]);
+    g.beginPath(); g.moveTo(mx, CH * 0.28); g.lineTo(mx, CH * 0.72); g.stroke();
+    for (const [yy, d] of [[CH * 0.28, 1], [CH * 0.72, -1]]) { g.beginPath(); g.moveTo(mx - 7, yy + d * 12); g.lineTo(mx, yy); g.lineTo(mx + 7, yy + d * 12); g.stroke(); }
+    // a pencilled dart
+    if (k !== 1) { g.strokeStyle = 'rgba(70,60,60,0.5)'; g.lineWidth = 1.1; g.beginPath(); g.moveTo(mx - 22, y1 - 10); g.lineTo(mx - 12, CH * 0.55); g.lineTo(mx - 2, y1 - 10); g.stroke(); }
+  });
+  return canvasTexture(c);
 }

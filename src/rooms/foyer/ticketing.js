@@ -128,10 +128,14 @@ export default function ticketing(ctx, room, h) {
       await room.focusOn(h.booth.focus, 'focus:booth');
       const eye = new THREE.Vector3(); camera.camera.getWorldPosition(eye);
       cat?.lookAt?.(eye);
-      await cat?.react?.('wake');
-      await cat?.react?.('stretch');
+      // POLISH: the whole sequence ran 31 s with no input (9.6 s here, then the walk); now about 20 s. His reactions
+      // blend, so each one starts as the last is easing off instead of after it has fully finished.
+      cat?.react?.('wake');
+      await room.wait(1.3);
+      cat?.react?.('stretch');
+      await room.wait(2.3);
       cat?.react?.('perk');
-      await room.wait(0.6); // he sniffs it
+      await room.wait(0.5); // he sniffs it
       // he takes it, delicately
       const card = new THREE.Mesh(new THREE.PlaneGeometry(0.075, 0.032), new THREE.MeshStandardMaterial({ color: '#e8c890', roughness: 0.85, side: THREE.DoubleSide }));
       card.name = 'catTicket';
@@ -139,15 +143,15 @@ export default function ticketing(ctx, room, h) {
       audio?.play('pickup', { gain: 0.2 });
       audio?.play('catPurr', { gain: 0.8 });
       cat?.react?.('slowBlink');
-      await room.wait(1.2);
+      await room.wait(0.9); // POLISH: 1.2
       cat?.lookAt?.(null);
       // he leaves: back to the room to watch him go, the view following him
-      await camera.exitFocus({ all: true, duration: 0.9 });
+      await camera.exitFocus({ all: true, duration: 0.8 }); // POLISH: 0.9
       const w = new THREE.Vector3();
       follow = room.animate(() => { if (!cat?.group?.parent || camera.inFocus) return; cat.group.getWorldPosition(w); w.y += 0.3; camera.lookAtPoint(w); });
       // one leg of the walk; the next starts as he arrives instead of after he has sat down
       const leg = (to, duration) => new Promise((resolve) => {
-        const p = cat.moveTo(to, { duration });
+        const p = cat.moveTo(to, { duration, turnScale: 0.6 }); // POLISH: quicker pivots between legs
         const job = cat._walk;
         let stop = () => {};
         const done = () => { stop(); resolve(); };
@@ -161,7 +165,7 @@ export default function ticketing(ctx, room, h) {
         const from = cat.group.position, to = path[k];
         const dist = Math.hypot(to[0] - from.x, to[1] - from.y, to[2] - from.z);
         if (k === 5) { ctx.characters?.lavinia?.react?.('bow'); said = dialogue.say('foyer.ticketing.solved'); }
-        await leg(to, k === 0 ? 0.7 : Math.max(0.5, dist / 1.6));
+        await leg(to, k === 0 ? 0.6 : Math.max(0.5, dist / 2.3)); // POLISH: a brisker trot, 1.6 → 2.3 m/s (was 0.7 first)
       }
       card.removeFromParent(); card.geometry.dispose(); card.material.dispose();
       cat?.remove?.();

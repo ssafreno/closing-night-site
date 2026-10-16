@@ -88,7 +88,7 @@ export default class StageRoom extends Room {
     }
     // the prompt desk: the hand-off to the finale (every Running Order line ticked and the lamp in the lighthouse).
     // Pike takes the last page, tucks it into the book, and the tabs wipe us into the finale scene.
-    this.addDoor({
+    const deskHs = this.addDoor({
       id: 'stage.desk', object: h.promptDesk.hit, to: 'finale', highlight: h.promptDesk.object,
       label: (open) => (open ? 'Prompt desk: places, please' : 'Prompt desk'),
       enabled: lit, transition: 'curtain', fade: 1.2,
@@ -105,6 +105,10 @@ export default class StageRoom extends Room {
         state.set('stage.finale.called', true);
       },
     });
+    // FIXED BY release-qa: Lavinia says "Take it to Harold", so the player selects the last page and uses it on the desk
+    // or on Pike; neither had a use for it and both answered with the wrong-item line. The page now does what a plain
+    // click on the desk does (the same gate, the same hand-off); Pike's hotspot gets the same in placePike().
+    deskHs.useItem = { lastpage: () => { this.openDoor('stage.desk'); } };
     spot('cuepanel', h.promptDesk.panelHit, 'Cue-light panel', h.promptDesk.panel, {
       enabled: () => lit() && !journal.delivered('script'),
       onClick: () => dialogue.say('pike.notyet.finale'),
@@ -188,7 +192,10 @@ export default class StageRoom extends Room {
     const pike = ctx.characters?.pike;
     pike?.placeAt?.(this.group, {
       ...this.h.perches.pike,
-      hotspot: { onClick: () => { pike.react?.('nod'); ctx.dialogue.say(ctx.dialogue.cycle('stage.delight.pike')); } },
+      hotspot: {
+        onClick: () => { pike.react?.('nod'); ctx.dialogue.say(ctx.dialogue.cycle('stage.delight.pike')); },
+        useItem: { lastpage: () => { this.openDoor('stage.desk'); } }, // FIXED BY release-qa: see the prompt desk above
+      },
     });
   }
 
@@ -327,7 +334,8 @@ export default class StageRoom extends Room {
   /** The lamp loose end: used on the lighthouse after Wardrobe. Room click, no focus view. */
   placeLamp() {
     const { ctx } = this;
-    if (!ctx.state.isSolved('lighthouse')) { ctx.dialogue.say('loose.lamp'); return; }
+    // POLISH: a line for using the lamp on the unsolved lighthouse ('loose.lamp' is about carrying it)
+    if (!ctx.state.isSolved('lighthouse')) { ctx.dialogue.say(ctx.dialogue.has?.('loose.lamp.early') ? 'loose.lamp.early' : 'loose.lamp'); return; }
     ctx.inventory.remove('lamp');
     ctx.state.set('stage.lampplaced', true);
     ctx.audio?.play('drop', { gain: 0.4 });
@@ -405,6 +413,8 @@ export default class StageRoom extends Room {
   vantageFor(from) {
     if (from === 'dressing' && this.ctx.state.isSolved('flyrail')) return ARRIVALS.dressingClothIn;
     if ((from === 'door' || from == null) && this._setIn() && !this.ctx.game?._titleMode) return ARRIVALS.setIn; // FIXED BY integration-qa
+    // POLISH: the title backdrop looks a little higher, so the hanging line-7 tag sits whole in frame (it was cut by the top edge)
+    if (from == null && this.ctx.game?._titleMode) return { ...VANTAGE, lookAt: [0.1, 1.85, -5.3] };
     return ARRIVALS[from] || VANTAGE;
   }
 

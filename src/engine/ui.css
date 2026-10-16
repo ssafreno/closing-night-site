@@ -1,3 +1,16 @@
+/* POLISH: a capitals-only face that sits in front of Homemade Apple in every handwriting stack (CSS --hand, canvas
+   FONTS.hand, SVG papers). unicode-range limits it to A-Z, so everything else falls through to Homemade Apple; if
+   gstatic is unreachable the capitals simply fall through too (the old look). Google Fonts file, so within DESIGN §11. */
+@font-face {
+  font-family: 'CN Hand Caps';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://fonts.gstatic.com/s/caveat/v23/WnznHAc5bAfYB2QRah7pcpNvOx-pjfJ9eIWpYT5Kmgq3sw.woff2) format('woff2');
+  unicode-range: U+0041-005A;
+  size-adjust: 128%;
+}
+
 /* Closing Night: engine UI styles (forked from Skeleton Key / An Ordinary Cat). Parchment, dark walnut, brass, and
    theatre velvet for the journal and the Running Order. */
 :root {
@@ -20,7 +33,9 @@
   --display: 'Abril Fatface', 'Didot', 'Bodoni 72', 'Playfair Display', Georgia, serif;
   --serif: 'IM Fell English', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
   --type: 'Special Elite', 'American Typewriter', 'Courier Prime', 'Courier New', monospace;
-  --hand: 'Homemade Apple', 'Bradley Hand', 'Segoe Script', cursive;
+  /* POLISH: capitals A-Z in the hand come from Caveat ('CN Hand Caps', top of file): Homemade Apple's capitals read as
+     scribble at 1280x800 ("SATURDAY'S", "GULL POINT", "A.H."). Lower case, figures and punctuation stay Homemade Apple. */
+  --hand: 'CN Hand Caps', 'Homemade Apple', 'Bradley Hand', 'Segoe Script', cursive;
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.35);
   --noise: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.35  0 0 0 0 0.22  0 0 0 0 0.1  0 0 0 0.16 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");

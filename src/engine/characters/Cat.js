@@ -956,7 +956,7 @@ export class Cat extends Character {
     return fx.promise;
   }
 
-  walkTo(target, { duration } = {}) {
+  walkTo(target, { duration, turnScale = 1 } = {}) { // POLISH: + turnScale (a brisker pivot; the foyer's ticket walk)
     if (this._walk) { const w = this._walk; this._walk = null; w.resolve(); }
     const from = this.group.position.clone();
     const to = new THREE.Vector3(target[0], target[1], target[2]);
@@ -969,7 +969,7 @@ export class Cat extends Character {
     return new Promise((resolve) => {
       this._walk = {
         stage: 0, t: 0, from, to, yaw0, yaw1,
-        turnDur: 0.3 + Math.abs(yaw1 - yaw0) * 0.22,
+        turnDur: (0.3 + Math.abs(yaw1 - yaw0) * 0.22) * turnScale,
         dur: duration ?? Math.max(0.8, dist / 0.42), resolve,
       };
       this.setPose('stand', 0.45);
