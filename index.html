@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Closing Night</title>
+  <meta name="description" content="An escape room. Six rooms. One last performance." />
+  <meta name="theme-color" content="#0b0806" />
+  <meta http-equiv="Cache-Control" content="no-cache" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='34' r='18' fill='%23f6e2a0'/%3E%3Crect x='46' y='52' width='8' height='40' fill='%23c9a24a'/%3E%3Crect x='32' y='88' width='36' height='8' rx='3' fill='%23c9a24a'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Abril+Fatface&family=IM+Fell+English:ital@0;1&family=Special+Elite&family=Homemade+Apple&family=Inter:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="./src/engine/ui.css?v=1" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "./vendor/three/three.module.js",
+        "three/addons/": "./vendor/three/addons/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <canvas id="game-canvas" tabindex="0"></canvas>
+  <div id="ui"></div>
+  <noscript><p style="color:#f0e3c4;font-family:Georgia,serif;text-align:center;margin-top:40vh">This game needs JavaScript. The curtain is waiting.</p></noscript>
+  <script type="module" src="./src/main.js?v=1"></script>
+</body>
+</html>
